@@ -6,7 +6,7 @@ import gradio as gr
 #     get_api_status,
 # )
 
-PORT = 8000
+PORT = 7778
 HOST = "0.0.0.0"
 
 
@@ -93,9 +93,9 @@ def ui():
                 
                 To use the API, you need to activate it. This will start the API server and you can then use the API endpoint.
                 
-                The API endpoint is http://localhost:{PORT}/v1/audio/speech
+                The default API endpoint is http://localhost:{PORT}/v1/audio/speech
                 
-                The OpenAI API Base_url is http://localhost:{PORT}/v1/audio/speech
+                The default OpenAI API Base_url is http://localhost:{PORT}/v1/
                 """
             )
 
@@ -200,7 +200,7 @@ def extension__tts_generation_webui():
     return {
         "package_name": "extension_kokoro_tts_api",
         "name": "Kokoro TTS API",
-        "version": "0.0.2",
+        "version": "0.0.3",
         "requirements": "git+https://github.com/rsxdalv/extension_kokoro_tts_api@main",
         "description": "Kokoro TTS API is a text-to-speech model by hexgrad",
         "extension_type": "interface",
