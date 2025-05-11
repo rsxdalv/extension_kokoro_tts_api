@@ -64,9 +64,7 @@ class CreateSpeechRequest(BaseModel):
     # voice: VoiceEnum = Field(
     #     ..., description="The voice to use when generating the audio"
     # )
-    voice: str = Field(
-        ..., description="The voice to use when generating the audio"
-    )
+    voice: str = Field(..., description="The voice to use when generating the audio")
     response_format: ResponseFormatEnum = Field(
         default=ResponseFormatEnum.MP3, description="The format to audio in"
     )
@@ -162,6 +160,7 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
     # Here we're just returning the WAV data regardless of the requested format
     return audio_data
 
+
 def generate_speech_kokoro(request: CreateSpeechRequest) -> bytes:
     """
     This is a placeholder for the actual TTS implementation.
@@ -182,12 +181,17 @@ def generate_speech_kokoro(request: CreateSpeechRequest) -> bytes:
 
     from extension_kokoro.main import tts
 
+    params = request.params or {}
+
+    text = request.input
+    voice, speed, model_name = request.voice, request.speed, request.model
+
     result = tts(
-        text=request.input,
-        voice=request.voice,
-        speed=request.speed,
-        model_name=request.model,
-        **request.params,
+        text=text,
+        voice=voice,
+        speed=speed,
+        model_name=model_name,
+        **params,
         # use_gpu=True,
     )
 
@@ -205,7 +209,6 @@ def generate_speech_kokoro(request: CreateSpeechRequest) -> bytes:
     audio_data = buffer.read()
 
     return audio_data
-
 
 
 # Define the API endpoint
@@ -272,4 +275,4 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=7778)
