@@ -107,60 +107,6 @@ app.add_middleware(
 )
 
 
-# Placeholder for the actual TTS functionality
-def generate_speech(request: CreateSpeechRequest) -> bytes:
-    """
-    This is a placeholder for the actual TTS implementation.
-    In a real-world scenario, you would integrate with a TTS engine here.
-    """
-    # Mock implementation: just return a simple signal
-    # In a real implementation, you would use a TTS engine like:
-    # - gTTS (Google Text-to-Speech)
-    # - pyttsx3
-    # - Amazon Polly
-    # - Microsoft Azure Cognitive Services
-    # - Your own fine-tuned TTS model
-
-    # Print out the custom params if they're provided
-    if request.params:
-        print(f"Using custom TTS parameters: {request.params}")
-        # In a real implementation, you would pass these params to your TTS engine
-
-    # For demo purposes, let's create a minimal audio output
-    from scipy.io import wavfile
-    import numpy as np
-
-    # Create a simple sine wave as a placeholder
-    sample_rate = 22050
-    duration = min(2.0, len(request.input) / 20)  # Duration based on input length
-    t = np.linspace(0, duration, int(sample_rate * duration), False)
-
-    # Generate a simple tone
-    freq = 440  # A4 note
-
-    # Apply "pitch" if specified in params (just as a demo)
-    if request.params and "pitch_up_key" in request.params:
-        try:
-            # Simple pitch shifting based on semitones
-            semitones = float(request.params["pitch_up_key"])
-            freq *= 2 ** (semitones / 12)
-        except (ValueError, TypeError):
-            pass
-
-    signal = np.sin(freq * 2 * np.pi * t) * 0.5
-
-    # Save to in-memory buffer
-    buffer = io.BytesIO()
-    wavfile.write(buffer, sample_rate, signal.astype(np.float32))
-    buffer.seek(0)
-
-    audio_data = buffer.read()
-
-    # Convert to the requested format (in a real implementation)
-    # Here we're just returning the WAV data regardless of the requested format
-    return audio_data
-
-
 def generate_speech_kokoro(request: CreateSpeechRequest) -> bytes:
     if request.params:
         print(f"Using custom TTS parameters: {request.params}")
