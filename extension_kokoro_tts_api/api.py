@@ -131,17 +131,71 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
     return webui_to_wav(result)
 
 
+def generic_tts_adapter(text, params, model):
+    if model == "kokoro":
+        return kokoro_adapter(text, params)
+    else:
+        raise ValueError(f"Model {model} not found")
+
+
 def preset_adapter(request: CreateSpeechRequest, text):
 
     params_preset = preset_manager.get_preset(request.model, request.voice)
 
-    params = {k: v for k, v in params_preset.items() if k != "model"}
+    params = params_preset.get("params", {})
     model = params_preset.get("model", None)
+    rvc_params = params_preset.get("rvc_params", {})
 
-    if model == "kokoro":
-        return kokoro_adapter(text, params)
+    audio_result = generic_tts_adapter(text, params, model)
 
-    raise ValueError(f"Model {model} not found")
+    if rvc_params:
+        return rvc_adapter(audio_result, rvc_params)
+    else:
+        return audio_result
+
+
+def rvc_adapter(audio_result, rvc_params):
+    import tempfile
+    import os
+    from extension_rvc.rvc_tab import run_rvc
+
+    audio = webui_to_wav(audio_result)
+
+    # Create a temporary file that doesn't auto-delete (delete=False)
+    # This prevents the "Permission denied" error on Windows
+    temp_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    try:
+        # Write the audio data to the file
+        temp_file.write(audio)
+        temp_file.flush()
+        temp_file.close()  # Explicitly close the file
+
+        # Store the file path
+        audio_file = temp_file.name
+
+        # Process with RVC
+        return run_rvc(original_audio_path=audio_file, **rvc_params)
+    finally:
+        # Clean up the temporary file after processing
+        try:
+            if os.path.exists(temp_file.name):
+                os.unlink(temp_file.name)
+        except Exception as e:
+            print(f"Warning: Could not delete temporary file {temp_file.name}: {e}")
+
+    # def run_rvc(
+    #     pitch_up_key: str,
+    #     original_audio_path: str,
+    #     index_path: str,
+    #     pitch_collection_method: str,
+    #     model_path: str,
+    #     index_rate: float,
+    #     filter_radius: int,
+    #     resample_sr: int,
+    #     rms_mix_rate: float,
+    #     protect: float,
+    #     **kwargs,
+    # )
 
 
 def kokoro_adapter(text, params):

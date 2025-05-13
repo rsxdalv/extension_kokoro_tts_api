@@ -9,26 +9,41 @@ class PresetManager:
         self.presets = self.load_presets()
 
     def load_presets(self):
+        old_presets = {}
         if os.path.exists(presets_path):
             with open(presets_path, "r") as f:
                 presets = json.load(f)
-        else:
-            presets = {
-                "global_preset": {
-                    "af_heart": {
-                        "model": "kokoro",
+                if presets.get("_version", "0.0.0") == "1.0.0":
+                    return presets
+                else:
+                    old_presets = presets
+
+        presets = {
+            "_version": "1.0.0",
+            "global_preset": {
+                "af_heart": {
+                    "model": "kokoro",
+                    "params": {
                         "model_name": "hexgrad/Kokoro-82M",
                         "voice": "af_heart",
                         "use_gpu": True,
-                        # "pitch_up_key": "2",
-                        # "index_path": "CaitArcane/added_IVF65_Flat_nprobe_1_CaitArcane_v2",
                     },
-                },
-            }
-            os.makedirs(os.path.dirname(presets_path), exist_ok=True)
-            with open(presets_path, "w") as f:
-                json.dump(presets, f, indent=4)
-
+                    "rvc_params": {
+                        "pitch_up_key": "0",
+                        "index_path": "CaitArcane\\added_IVF65_Flat_nprobe_1_CaitArcane_v2",
+                        "pitch_collection_method": "harvest",
+                        "model_path": "CaitArcane\\CaitArcane",
+                        "index_rate": 0.66,
+                        "filter_radius": 3,
+                        "resample_sr": 0,
+                        "rms_mix_rate": 1,
+                        "protect": 0.33,
+                    },
+                }
+            },
+            "old_presets": old_presets,
+        }
+        self.set_presets(presets)
         return presets
 
     def save_presets(self):

@@ -1,5 +1,9 @@
 import gradio as gr
 
+from .extension_tts_generation_webui_metadata import (
+    extension_tts_generation_webui_metadata,
+)
+
 # from .threader import (
 #     activate_api,
 #     deactivate_api,
@@ -225,24 +229,6 @@ def startup_ui():
             ```
             """
                 )
-
-
-def extension_tts_generation_webui_metadata():
-    return {
-        "package_name": "extension_kokoro_tts_api",
-        "name": "Kokoro TTS API",
-        "version": "0.0.5",
-        "requirements": "git+https://github.com/rsxdalv/extension_kokoro_tts_api@main",
-        "description": "Kokoro TTS API is a text-to-speech model by hexgrad",
-        "extension_type": "interface",
-        "extension_class": "tools",
-        "author": "hexgrad",
-        "extension_author": "rsxdalv",
-        "license": "MIT",
-        "website": "https://huggingface.co/hexgrad/Kokoro-82M",
-        "extension_website": "https://github.com/rsxdalv/extension_kokoro_tts_api",
-        "extension_platform_version": "0.0.1",
-    }
 
 
 def extension__tts_generation_webui():
