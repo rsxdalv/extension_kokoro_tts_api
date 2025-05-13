@@ -162,28 +162,20 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
 
 
 def generate_speech_kokoro(request: CreateSpeechRequest) -> bytes:
-    """
-    This is a placeholder for the actual TTS implementation.
-    In a real-world scenario, you would integrate with a TTS engine here.
-    """
-    # Mock implementation: just return a simple signal
-    # In a real implementation, you would use a TTS engine like:
-    # - gTTS (Google Text-to-Speech)
-    # - pyttsx3
-    # - Amazon Polly
-    # - Microsoft Azure Cognitive Services
-    # - Your own fine-tuned TTS model
-
-    # Print out the custom params if they're provided
     if request.params:
         print(f"Using custom TTS parameters: {request.params}")
-        # In a real implementation, you would pass these params to your TTS engine
-
-    from extension_kokoro.main import tts
 
     params = request.params or {}
 
     text = request.input
+    result = kokoro_adapter(request, params, text)
+
+    return webui_to_wav(result)
+
+
+def kokoro_adapter(request: CreateSpeechRequest, params, text):
+    from extension_kokoro.main import tts
+
     voice, speed, model_name = request.voice, request.speed, request.model
 
     result = tts(
@@ -195,9 +187,15 @@ def generate_speech_kokoro(request: CreateSpeechRequest) -> bytes:
         # use_gpu=True,
     )
 
-    sample_rate, audio_data = result["audio_out"]
-    # return as wav
+    return result
 
+
+def webui_to_wav(result):
+    sample_rate, audio_data = result["audio_out"]
+    return to_wav(sample_rate, audio_data)
+
+
+def to_wav(sample_rate, audio_data):
     from scipy.io import wavfile
     import numpy as np
     import io
@@ -207,7 +205,6 @@ def generate_speech_kokoro(request: CreateSpeechRequest) -> bytes:
     buffer.seek(0)
 
     audio_data = buffer.read()
-
     return audio_data
 
 
