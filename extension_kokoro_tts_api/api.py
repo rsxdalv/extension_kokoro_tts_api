@@ -2,11 +2,10 @@ from fastapi import FastAPI, HTTPException, Response, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, validator
 from enum import Enum
-from typing import Optional, Literal, Union, Dict, Any
-import io
+from typing import Optional, Union, Dict, Any
 import uuid
-import os
-from datetime import datetime
+
+from .Presets import preset_manager
 
 
 # Define enums for the fixed values
@@ -107,33 +106,54 @@ app.add_middleware(
 )
 
 
-def generate_speech_kokoro(request: CreateSpeechRequest) -> bytes:
+def generate_speech(request: CreateSpeechRequest) -> bytes:
     if request.params:
         print(f"Using custom TTS parameters: {request.params}")
 
-    params = request.params or {}
-
     text = request.input
-    result = kokoro_adapter(request, params, text)
+    model = request.model
+    if model == "hexgrad/Kokoro-82M":
+        params = request.params or {}
+        result = kokoro_adapter(
+            text,
+            {
+                "voice": request.voice,
+                "speed": request.speed,
+                "model_name": request.model,
+                **params,
+            },
+        )
+    elif model == "global_preset":
+        result = preset_adapter(request, text)
+    else:
+        raise ValueError(f"Model {model} not found")
 
     return webui_to_wav(result)
 
 
-def kokoro_adapter(request: CreateSpeechRequest, params, text):
+def preset_adapter(request: CreateSpeechRequest, text):
+
+    params_preset = preset_manager.get_preset(request.model, request.voice)
+
+    params = {k: v for k, v in params_preset.items() if k != "model"}
+    model = params_preset.get("model", None)
+
+    if model == "kokoro":
+        return kokoro_adapter(text, params)
+
+    raise ValueError(f"Model {model} not found")
+
+
+def kokoro_adapter(text, params):
     from extension_kokoro.main import tts
 
-    voice, speed, model_name = request.voice, request.speed, request.model
+    print(f"Using kokoro with params: {params}")
 
-    result = tts(
+    return tts(
         text=text,
-        voice=voice,
-        speed=speed,
-        model_name=model_name,
         **params,
         # use_gpu=True,
     )
-
-    return result
 
 
 def webui_to_wav(result):
@@ -161,7 +181,7 @@ async def create_speech(
 ):
     try:
         # Generate the speech
-        audio_data = generate_speech_kokoro(request)
+        audio_data = generate_speech(request)
 
         # Set the appropriate content type based on the requested format
         content_types = {
@@ -186,6 +206,11 @@ async def create_speech(
         )
 
     except Exception as e:
+        print(f"Error generating speech: {e}")
+        # print a full stack trace
+        import traceback
+
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 
