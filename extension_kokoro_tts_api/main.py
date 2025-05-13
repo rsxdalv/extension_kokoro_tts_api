@@ -83,8 +83,40 @@ def test_api_with_open_ai(host=HOST, port=PORT):
         return audio.getvalue()
 
 
+def presets_ui():
+    import json
+    from .Presets import (
+        preset_manager,
+    )
+
+    presets = preset_manager.get_presets()
+    with gr.Row():
+        with gr.Column():
+            gr.Markdown("## Presets")
+            presets_json = gr.JSON(value=presets, label="Presets")
+            presets_input = gr.TextArea(
+                value=json.dumps(presets, indent=4),
+                lines=12,
+                label="Edit Presets",
+                interactive=True,
+            )
+            gr.Button("Save Presets").click(
+                fn=lambda x: preset_manager.set_presets(json.loads(x)),
+                inputs=[presets_input],
+                outputs=[presets_json],
+            )
+
+
 def ui():
     gr.Markdown("# Kokoro TTS API")
+    with gr.Tabs():
+        with gr.Tab("Startup"):
+            startup_ui()
+        with gr.Tab("Presets"):
+            presets_ui()
+
+
+def startup_ui():
     with gr.Row():
         with gr.Column():
             gr.Markdown(
@@ -135,26 +167,27 @@ def ui():
             )
 
             with gr.Accordion("Code Snippets", open=False):
-                # show code snippet
                 gr.Markdown(
-                    """
+                    f"""
             ```python
             import requests
 
             response = requests.post(
-                "http://localhost:8000/v1/audio/speech",
-                json={
+                "http://localhost:{PORT}/v1/audio/speech",
+                json={{
                     "model": "hexgrad/Kokoro-82M",
                     "input": "Hello world with custom parameters.",
                     "voice": "af_heart",
                     "speed": 1.0,
-                    "params": {
+                    "params": {{
                         "pitch_up_key": "2",
                         "index_path": "CaitArcane/added_IVF65_Flat_nprobe_1_CaitArcane_v2",
-                    },
-                },
+                    }},
+                }},
             )
             audio = response.content
+            with open("audio.mp3", "wb") as f:
+                f.write(audio)
             ```
             """
                 )
@@ -167,40 +200,38 @@ def ui():
                 api_name="test_api_with_open_ai",
             )
 
-            # show code snippet
             with gr.Accordion("Code Snippets", open=False):
                 gr.Markdown(
-                    """
+                    f"""
             ```python
             from openai import OpenAI
 
-            client = OpenAI(api_key="sk-1234567890", base_url="http://localhost:8000/v1")
+            client = OpenAI(api_key="sk-1234567890", base_url="http://localhost:{PORT}/v1")
 
             with client.audio.speech.with_streaming_response.create(
                 model="hexgrad/Kokoro-82M",
                 voice="af_heart",
                 input="Today is a wonderful day to build something people love!",
                 instructions="Speak in a cheerful and positive tone.",
-                extra_body={
-                    "params": {
+                extra_body={{
+                    "params": {{
                         "use_gpu": True,
-                    },
-                },
+                    }},
+                }},
             ) as response:
                 audio = response.read()
+                with open("audio.mp3", "wb") as f:
+                    f.write(audio)
             ```
             """
                 )
 
 
-def extension__tts_generation_webui():
-    """Extension entry point."""
-    ui()
-
+def extension_tts_generation_webui_metadata():
     return {
         "package_name": "extension_kokoro_tts_api",
         "name": "Kokoro TTS API",
-        "version": "0.0.4",
+        "version": "0.0.5",
         "requirements": "git+https://github.com/rsxdalv/extension_kokoro_tts_api@main",
         "description": "Kokoro TTS API is a text-to-speech model by hexgrad",
         "extension_type": "interface",
@@ -212,6 +243,13 @@ def extension__tts_generation_webui():
         "extension_website": "https://github.com/rsxdalv/extension_kokoro_tts_api",
         "extension_platform_version": "0.0.1",
     }
+
+
+def extension__tts_generation_webui():
+    """Extension entry point."""
+    ui()
+
+    return extension_tts_generation_webui_metadata()
 
 
 if __name__ == "__main__":
