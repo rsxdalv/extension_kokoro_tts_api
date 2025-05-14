@@ -183,20 +183,6 @@ def rvc_adapter(audio_result, rvc_params):
         except Exception as e:
             print(f"Warning: Could not delete temporary file {temp_file.name}: {e}")
 
-    # def run_rvc(
-    #     pitch_up_key: str,
-    #     original_audio_path: str,
-    #     index_path: str,
-    #     pitch_collection_method: str,
-    #     model_path: str,
-    #     index_rate: float,
-    #     filter_radius: int,
-    #     resample_sr: int,
-    #     rms_mix_rate: float,
-    #     protect: float,
-    #     **kwargs,
-    # )
-
 
 def kokoro_adapter(text, params):
     from extension_kokoro.main import tts
@@ -221,11 +207,24 @@ def to_wav(sample_rate, audio_data):
     import io
 
     buffer = io.BytesIO()
-    wavfile.write(buffer, sample_rate, audio_data.astype(np.float32))
-    buffer.seek(0)
 
-    audio_data = buffer.read()
-    return audio_data
+    # Check the data range to determine appropriate format
+    if audio_data.dtype == np.float32 or audio_data.dtype == np.float64:
+        # Data is already float, make sure it's in range [-1, 1]
+        if np.max(np.abs(audio_data)) > 1.0:
+            audio_data = audio_data / np.max(np.abs(audio_data))
+        wavfile.write(buffer, sample_rate, audio_data.astype(np.float32))
+    else:
+        # Convert to int16 for integer data
+        if audio_data.dtype != np.int16:
+            # Scale appropriately if needed
+            if np.max(np.abs(audio_data)) > 32767:
+                audio_data = audio_data * (32767 / np.max(np.abs(audio_data)))
+            audio_data = audio_data.astype(np.int16)
+        wavfile.write(buffer, sample_rate, audio_data)
+
+    buffer.seek(0)
+    return buffer.read()
 
 
 # Define the API endpoint
@@ -295,6 +294,10 @@ async def root():
 
 
 if __name__ == "__main__":
+    from tts_webui.utils.torch_load_patch import apply_torch_load_patch
+
+    apply_torch_load_patch()
+
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=7778)
