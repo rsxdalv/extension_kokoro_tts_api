@@ -112,8 +112,8 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
 
     text = request.input
     model = request.model
+    params = request.params or {}
     if model == "hexgrad/Kokoro-82M":
-        params = request.params or {}
         result = kokoro_adapter(
             text,
             {
@@ -127,6 +127,9 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
         result = preset_adapter(request, text)
     else:
         raise ValueError(f"Model {model} not found")
+
+    if params.get("rvc_params"):
+        result = rvc_adapter(result, params["rvc_params"])
 
     return webui_to_wav(result)
 
