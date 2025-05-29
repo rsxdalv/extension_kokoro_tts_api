@@ -65,3 +65,29 @@ async def main() -> None:
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+### Chatterbox
+
+```python
+from openai import OpenAI
+
+client = OpenAI(api_key="sk-1234567890", base_url="http://localhost:7778/v1")
+
+with client.audio.speech.with_streaming_response.create(
+    model="chatterbox",
+    # voice="random",
+    voice="voices/irohazaka.wav",
+    input="Today is a wonderful day to build something people love!",
+    # speed=1.0, # not implemented
+    extra_body={
+        "params": {
+            "exaggeration": 0.5,
+            "cfg_weight": 0.5,
+            "temperature": 0.8,
+        },
+    },
+) as response:
+    audio = response.read()
+    with open("audio.mp3", "wb") as f:
+        f.write(audio)
+```

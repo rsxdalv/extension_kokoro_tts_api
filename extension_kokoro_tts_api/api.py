@@ -123,6 +123,18 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 **params,
             },
         )
+    if model == "chatterbox":
+        result = chatterbox_adapter(
+            text,
+            {
+                "audio_prompt_path": (
+                    None if request.voice == "random" else request.voice
+                ),
+                # implement manual speedup?
+                # "speed": request.speed,
+                **params,
+            },
+        )
     elif model == "global_preset":
         result = preset_adapter(request, text)
     else:
@@ -137,6 +149,8 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
 def generic_tts_adapter(text, params, model):
     if model == "kokoro":
         return kokoro_adapter(text, params)
+    if model == "chatterbox":
+        return chatterbox_adapter(text, params)
     else:
         raise ValueError(f"Model {model} not found")
 
@@ -187,16 +201,37 @@ def rvc_adapter(audio_result, rvc_params):
             print(f"Warning: Could not delete temporary file {temp_file.name}: {e}")
 
 
+def using_with_params_decorator(func):
+    def wrapper(*args, **kwargs):
+        name = func.__name__
+        name = name.replace("_adapter", "")
+        print(f"Using {name} with params: {kwargs}")
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@using_with_params_decorator
 def kokoro_adapter(text, params):
     from extension_kokoro.main import tts
-
-    print(f"Using kokoro with params: {params}")
 
     return tts(
         text=text,
         **params,
         # use_gpu=True,
     )
+
+
+@using_with_params_decorator
+def chatterbox_adapter(text, params):
+    try:
+        from extension_chatterbox.gradio_app import tts
+    except ImportError:
+        raise ImportError(
+            "Chatterbox is not installed. Please install it with `pip install git+https://github.com/rsxdalv/extension_chatterbox@main`"
+        )
+
+    return tts(text, **params)
 
 
 def webui_to_wav(result):
