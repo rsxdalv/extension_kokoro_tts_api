@@ -174,7 +174,13 @@ def preset_adapter(request: CreateSpeechRequest, text):
 def rvc_adapter(audio_result, rvc_params):
     import tempfile
     import os
-    from extension_rvc.rvc_tab import run_rvc
+    
+    try:
+        from extension_rvc.rvc_tab import run_rvc
+    except ImportError:
+        raise ImportError(
+            "RVC extension is not installed. Please install it to use RVC voice conversion features."
+        )
 
     audio = webui_to_wav(audio_result)
 
@@ -205,7 +211,7 @@ def using_with_params_decorator(func):
     def wrapper(*args, **kwargs):
         name = func.__name__
         name = name.replace("_adapter", "")
-        print(f"Using {name} with params: {kwargs}")
+        print(f"Using {name} with params: {args}, {kwargs}")
         return func(*args, **kwargs)
 
     return wrapper
@@ -213,7 +219,12 @@ def using_with_params_decorator(func):
 
 @using_with_params_decorator
 def kokoro_adapter(text, params):
-    from extension_kokoro.main import tts
+    try:
+        from extension_kokoro.main import tts
+    except ImportError:
+        raise ImportError(
+            "Kokoro extension is not installed. Please install it to use Kokoro TTS features."
+        )
 
     return tts(
         text=text,
@@ -228,7 +239,7 @@ def chatterbox_adapter(text, params):
         from extension_chatterbox.gradio_app import tts
     except ImportError:
         raise ImportError(
-            "Chatterbox is not installed. Please install it with `pip install git+https://github.com/rsxdalv/extension_chatterbox@main`"
+            "Chatterbox extension is not installed. Please install it with `pip install git+https://github.com/rsxdalv/extension_chatterbox@main`"
         )
 
     return tts(text, **params)

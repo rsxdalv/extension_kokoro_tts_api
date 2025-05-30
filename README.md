@@ -4,6 +4,25 @@ This extension provides an OpenAI compatible API for Kokoro TTS and RVC.
 
 Used as extension in [TTS Webui](https://github.com/rsxdalv/tts-webui)
 
+## Installation
+
+```bash
+pip install git+https://github.com/rsxdalv/extension_kokoro_tts_api@main
+```
+
+## Requirements
+
+Models require individual installation of their extensions.
+
+```bash
+# Kokoro TTS
+pip install git+https://github.com/rsxdalv/extension_kokoro@main
+# RVC
+pip install git+https://github.com/rsxdalv/extension_rvc@main
+# Chatterbox
+pip install git+https://github.com/rsxdalv/extension_chatterbox@main
+```
+
 ## Usage
 
 ### Kokoro TTS
