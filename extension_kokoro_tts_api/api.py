@@ -123,7 +123,7 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 **params,
             },
         )
-    if model == "chatterbox":
+    elif model == "chatterbox":
         result = chatterbox_adapter(
             text,
             {
@@ -149,7 +149,7 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
 def generic_tts_adapter(text, params, model):
     if model == "kokoro":
         return kokoro_adapter(text, params)
-    if model == "chatterbox":
+    elif model == "chatterbox":
         return chatterbox_adapter(text, params)
     else:
         raise ValueError(f"Model {model} not found")
