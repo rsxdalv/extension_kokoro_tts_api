@@ -39,7 +39,18 @@ class PresetManager:
                         "rms_mix_rate": 1,
                         "protect": 0.33,
                     },
-                }
+                },
+                "chatterbox_default": {
+                    "model": "chatterbox",
+                    "params": {
+                        "exaggeration": 0.5,
+                        "cfg_weight": 0.5,
+                        "temperature": 0.8,
+                        "model_name": "just_a_placeholder",
+                        "device": "auto",
+                        "dtype": "float32",
+                    },
+                },
             },
             "old_presets": old_presets,
         }

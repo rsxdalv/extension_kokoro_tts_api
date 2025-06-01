@@ -116,16 +116,56 @@ def presets_ui():
                 fn=lambda x: preset_manager.set_presets(json.loads(x)),
                 inputs=[presets_input],
                 outputs=[presets_json],
+                api_name="open_ai_api_save_presets",
+            )
+            gr.Button("Load Presets").click(
+                fn=lambda: preset_manager.get_presets(),
+                outputs=[presets_json],
+                api_name="open_ai_api_load_presets",
             )
 
 
+def extra_functions_ui():
+    def get_chatterbox_voices():
+        import os
+
+        voices = []
+        for file in os.listdir("voices"):
+            if file.endswith(".wav"):
+                voices.append(file)
+        return voices
+
+    gr.Button("Get Chatterbox Voices").click(
+        fn=get_chatterbox_voices,
+        outputs=[gr.JSON()],
+        api_name="get_chatterbox_voices",
+    )
+
+    def test_api_with_open_ai(params):
+        from .api import preset_adapter, CreateSpeechRequest
+
+        request = CreateSpeechRequest(**params)
+        text = request.input
+        result = preset_adapter(request, text)
+        return result["audio_out"]
+
+    gr.Button("Test Voice").click(
+        fn=test_api_with_open_ai,
+        inputs=[gr.JSON()],
+        outputs=[gr.Audio()],
+        api_name="open_ai_api_test_voice_preset",
+    )
+
+
 def ui():
-    gr.Markdown("# Kokoro TTS API")
+    gr.Markdown("# Kokoro TTS & Chatterbox API")
     with gr.Tabs():
         with gr.Tab("Startup"):
             startup_ui()
         with gr.Tab("Presets"):
             presets_ui()
+        with gr.Tab("Extra Functions (Backend)"):
+            extra_functions_ui()
 
 
 def startup_ui():
@@ -133,7 +173,7 @@ def startup_ui():
         with gr.Column():
             gr.Markdown(
                 f"""
-                This extension adds an API endpoint for the Kokoro TTS model. You can use this to generate audio from text.
+                This extension adds an API endpoint for the Kokoro TTS & Chatterbox models. You can use this to generate audio from text.
                 
                 To use the API, you need to activate it. This will start the API server and you can then use the API endpoint.
                 
@@ -252,5 +292,5 @@ if __name__ == "__main__":
         extension__tts_generation_webui()
 
     demo.launch(
-        server_port=7771,
+        server_port=7770,
     )
