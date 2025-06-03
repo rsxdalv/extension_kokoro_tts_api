@@ -1,3 +1,4 @@
+import os
 import gradio as gr
 
 from .extension_tts_generation_webui_metadata import (
@@ -283,6 +284,11 @@ def extension__tts_generation_webui():
     ui()
 
     return extension_tts_generation_webui_metadata()
+
+
+ENV_AUTO_ACTIVATE_OPENAI_API = os.environ.get("AUTO_ACTIVATE_OPENAI_API", "0")
+if ENV_AUTO_ACTIVATE_OPENAI_API == "1":
+    activate_api()
 
 
 if __name__ == "__main__":
