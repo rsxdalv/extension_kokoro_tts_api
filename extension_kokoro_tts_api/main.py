@@ -130,7 +130,7 @@ def extra_functions_ui():
         import os
 
         voices = []
-        for file in os.listdir("voices"):
+        for file in os.listdir("voices/chatterbox"):
             if file.endswith(".wav"):
                 voices.append(file)
         return voices
