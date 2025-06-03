@@ -132,6 +132,7 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 ),
                 # implement manual speedup?
                 # "speed": request.speed,
+                "chunked": True,
                 **params,
             },
         )
