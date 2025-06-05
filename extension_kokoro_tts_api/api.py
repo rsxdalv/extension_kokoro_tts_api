@@ -1,40 +1,13 @@
 from fastapi import FastAPI, HTTPException, Response, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
 from enum import Enum
-from typing import Optional, Union, Dict, Any
+from typing import Optional, Union, Dict, Any, Iterator
 import uuid
+import io
 
 from .Presets import preset_manager
-
-
-# Define enums for the fixed values
-# class VoiceEnum(str, Enum):
-#     ALLOY = "alloy"
-#     ASH = "ash"
-#     BALLAD = "ballad"
-#     CORAL = "coral"
-#     ECHO = "echo"
-#     FABLE = "fable"
-#     ONYX = "onyx"
-#     NOVA = "nova"
-#     SAGE = "sage"
-#     SHIMMER = "shimmer"
-#     VERSE = "verse"
-
-# from extension_kokoro.CHOICES import CHOICES
-
-
-# class VoiceEnum(str, Enum):
-#     for choice in CHOICES:
-#         locals()[choice] = choice
-
-#     class VoiceEnum(str, Enum):
-#   File "c:\Users\rob\Desktop\tts-generation-webui-main\workspace\extension_kokoro_tts_api\extension_kokoro_tts_api\api.py", line 30, in VoiceEnum
-#     for choice in CHOICES:
-#   File "c:\Users\rob\Desktop\tts-generation-webui-main\installer_files\env\lib\enum.py", line 134, in __setitem__
-#     raise TypeError('Attempted to reuse key: %r' % key)
-# TypeError: Attempted to reuse key: 'choice'
 
 
 class ResponseFormatEnum(str, Enum):
@@ -60,9 +33,6 @@ class CreateSpeechRequest(BaseModel):
     input: str = Field(
         ..., description="The text to generate audio for", max_length=4096
     )
-    # voice: VoiceEnum = Field(
-    #     ..., description="The voice to use when generating the audio"
-    # )
     voice: str = Field(..., description="The voice to use when generating the audio")
     response_format: ResponseFormatEnum = Field(
         default=ResponseFormatEnum.MP3, description="The format to audio in"
@@ -77,6 +47,9 @@ class CreateSpeechRequest(BaseModel):
     )
     params: Optional[Dict[str, Any]] = Field(
         default=None, description="Additional parameters for the TTS engine"
+    )
+    stream: bool = Field(
+        default=True, description="Whether to stream the audio response"
     )
 
     @validator("instructions")
@@ -106,13 +79,43 @@ app.add_middleware(
 )
 
 
-def generate_speech(request: CreateSpeechRequest) -> bytes:
+def generate_speech_stream(request: CreateSpeechRequest) -> Iterator[bytes]:
+    """Generate speech as a stream of audio chunks"""
     if request.params:
         print(f"Using custom TTS parameters: {request.params}")
 
     text = request.input
     model = request.model
     params = request.params or {}
+    
+    if model == "chatterbox":
+        # Use streaming chatterbox adapter
+        for audio_chunk in chatterbox_streaming_adapter(
+            text,
+            {
+                "audio_prompt_path": (
+                    None if request.voice == "random" else request.voice
+                ),
+                "chunked": True,
+                **params,
+            },
+        ):
+            yield audio_chunk
+    else:
+        # For non-streaming models, fall back to regular generation
+        result = generate_speech(request)
+        yield result
+
+
+def generate_speech(request: CreateSpeechRequest) -> bytes:
+    """Generate speech as a single audio file (non-streaming)"""
+    if request.params:
+        print(f"Using custom TTS parameters: {request.params}")
+
+    text = request.input
+    model = request.model
+    params = request.params or {}
+    
     if model == "hexgrad/Kokoro-82M":
         result = kokoro_adapter(
             text,
@@ -130,8 +133,6 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 "audio_prompt_path": (
                     None if request.voice == "random" else request.voice
                 ),
-                # implement manual speedup?
-                # "speed": request.speed,
                 "chunked": True,
                 **params,
             },
@@ -157,7 +158,6 @@ def generic_tts_adapter(text, params, model):
 
 
 def preset_adapter(request: CreateSpeechRequest, text):
-
     params_preset = preset_manager.get_preset(request.model, request.voice)
 
     params = params_preset.get("params", {})
@@ -186,21 +186,15 @@ def rvc_adapter(audio_result, rvc_params):
     audio = webui_to_wav(audio_result)
 
     # Create a temporary file that doesn't auto-delete (delete=False)
-    # This prevents the "Permission denied" error on Windows
     temp_file = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
     try:
-        # Write the audio data to the file
         temp_file.write(audio)
         temp_file.flush()
-        temp_file.close()  # Explicitly close the file
+        temp_file.close()
 
-        # Store the file path
         audio_file = temp_file.name
-
-        # Process with RVC
         return run_rvc(original_audio_path=audio_file, **rvc_params)
     finally:
-        # Clean up the temporary file after processing
         try:
             if os.path.exists(temp_file.name):
                 os.unlink(temp_file.name)
@@ -214,7 +208,6 @@ def using_with_params_decorator(func):
         name = name.replace("_adapter", "")
         print(f"Using {name} with params: {args}, {kwargs}")
         return func(*args, **kwargs)
-
     return wrapper
 
 
@@ -227,11 +220,7 @@ def kokoro_adapter(text, params):
             "Kokoro extension is not installed. Please install it to use Kokoro TTS features."
         )
 
-    return tts(
-        text=text,
-        **params,
-        # use_gpu=True,
-    )
+    return tts(text=text, **params)
 
 
 @using_with_params_decorator
@@ -244,6 +233,95 @@ def chatterbox_adapter(text, params):
         )
 
     return tts(text, **params)
+
+
+def to_wav_streaming_header(sample_rate, estimated_length=None):
+    """
+    Create a WAV header for streaming. If estimated_length is None,
+    we'll use a placeholder that can be updated later.
+    """
+    import struct
+    
+    # WAV format parameters
+    channels = 1
+    bits_per_sample = 16
+    byte_rate = sample_rate * channels * bits_per_sample // 8
+    block_align = channels * bits_per_sample // 8
+    
+    # If we don't know the length, use a large placeholder
+    if estimated_length is None:
+        data_size = 0xFFFFFFFF - 36  # Max size minus header
+    else:
+        data_size = estimated_length * channels * bits_per_sample // 8
+    
+    # Create WAV header
+    header = b'RIFF'
+    header += struct.pack('<I', data_size + 36)  # File size - 8
+    header += b'WAVE'
+    header += b'fmt '
+    header += struct.pack('<I', 16)  # PCM header size
+    header += struct.pack('<H', 1)   # PCM format
+    header += struct.pack('<H', channels)
+    header += struct.pack('<I', sample_rate)
+    header += struct.pack('<I', byte_rate)
+    header += struct.pack('<H', block_align)
+    header += struct.pack('<H', bits_per_sample)
+    header += b'data'
+    header += struct.pack('<I', data_size)
+    
+    return header
+
+
+def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
+    """
+    Streaming adapter for chatterbox that yields audio chunks as they're generated.
+    First yields a WAV header, then raw audio data chunks.
+    """
+    try:
+        from extension_chatterbox.gradio_app import tts_stream
+    except ImportError:
+        raise ImportError(
+            "Chatterbox extension is not installed or doesn't support streaming. "
+            "Please install it with `pip install git+https://github.com/rsxdalv/extension_chatterbox@main`"
+        )
+    
+    print(f"Using chatterbox streaming with params: {params}")
+    
+    header_sent = False
+    sample_rate = None
+    
+    try:
+        for partial_result in tts_stream(text, **params):
+            if partial_result and "audio_out" in partial_result:
+                current_sample_rate, audio_data = partial_result["audio_out"]
+                
+                if not header_sent:
+                    # Send WAV header with first chunk
+                    sample_rate = current_sample_rate
+                    header = to_wav_streaming_header(sample_rate)
+                    yield header
+                    header_sent = True
+                
+                # Convert audio data to bytes and send
+                import numpy as np
+                if audio_data.dtype == np.float32 or audio_data.dtype == np.float64:
+                    # Convert float to int16
+                    if np.max(np.abs(audio_data)) > 1.0:
+                        audio_data = audio_data / np.max(np.abs(audio_data))
+                    audio_data = (audio_data * 32767).astype(np.int16)
+                elif audio_data.dtype != np.int16:
+                    # Convert to int16
+                    if np.max(np.abs(audio_data)) > 32767:
+                        audio_data = audio_data * (32767 / np.max(np.abs(audio_data)))
+                    audio_data = audio_data.astype(np.int16)
+                
+                yield audio_data.tobytes()
+                    
+    except Exception as e:
+        print(f"Error in streaming chatterbox: {e}")
+        # Fallback to non-streaming if streaming fails
+        result = chatterbox_adapter(text, params)
+        yield webui_to_wav(result)
 
 
 def webui_to_wav(result):
@@ -277,15 +355,12 @@ def to_wav(sample_rate, audio_data):
     return buffer.read()
 
 
-# Define the API endpoint
-@app.post("/v1/audio/speech", response_class=Response)
+# Define the API endpoint with streaming support
+@app.post("/v1/audio/speech")
 async def create_speech(
     request: CreateSpeechRequest, background_tasks: BackgroundTasks
 ):
     try:
-        # Generate the speech
-        audio_data = generate_speech(request)
-
         # Set the appropriate content type based on the requested format
         content_types = {
             ResponseFormatEnum.MP3: "audio/mpeg",
@@ -299,20 +374,30 @@ async def create_speech(
             request.response_format, "application/octet-stream"
         )
 
-        # Create a response with the audio data
-        return Response(
-            content=audio_data,
-            media_type=content_type,
-            headers={
-                "Content-Disposition": f"attachment; filename=speech_{uuid.uuid4()}.{request.response_format}"
-            },
-        )
+        if request.stream and request.model == "chatterbox":
+            # Return streaming response for chatterbox
+            return StreamingResponse(
+                generate_speech_stream(request),
+                media_type=content_type,
+                headers={
+                    "Content-Disposition": f"attachment; filename=speech_{uuid.uuid4()}.{request.response_format}",
+                    "Transfer-Encoding": "chunked"
+                }
+            )
+        else:
+            # Return regular response for non-streaming models or when streaming is disabled
+            audio_data = generate_speech(request)
+            return Response(
+                content=audio_data,
+                media_type=content_type,
+                headers={
+                    "Content-Disposition": f"attachment; filename=speech_{uuid.uuid4()}.{request.response_format}"
+                },
+            )
 
     except Exception as e:
         print(f"Error generating speech: {e}")
-        # print a full stack trace
         import traceback
-
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -326,10 +411,10 @@ class ErrorResponse(BaseModel):
 @app.get("/")
 async def root():
     return {
-        "info": "OpenAI-compatible Text-to-Speech API",
+        "info": "OpenAI-compatible Text-to-Speech API with Streaming Support",
         "documentation": "/docs",
         "example": {
-            "curl": """
+            "curl_regular": """
             curl -X POST http://localhost:8000/v1/audio/speech \\
                 -H "Content-Type: application/json" \\
                 -d '{
@@ -338,6 +423,17 @@ async def root():
                     "voice": "alloy"
                 }' \\
                 --output speech.mp3
+            """,
+            "curl_streaming": """
+            curl -X POST http://localhost:8000/v1/audio/speech \\
+                -H "Content-Type: application/json" \\
+                -d '{
+                    "model": "chatterbox",
+                    "input": "Hello world! This is a streaming test.",
+                    "voice": "random",
+                    "stream": true
+                }' \\
+                --output speech_stream.wav
             """
         },
     }
