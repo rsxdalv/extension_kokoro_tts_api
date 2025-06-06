@@ -91,7 +91,7 @@ def generate_speech_stream(request: CreateSpeechRequest) -> Iterator[bytes]:
     text = request.input
     model = request.model
     params = request.params or {}
-    
+
     if model == "chatterbox":
         # Use streaming chatterbox adapter
         for audio_chunk in chatterbox_streaming_adapter(
@@ -107,7 +107,9 @@ def generate_speech_stream(request: CreateSpeechRequest) -> Iterator[bytes]:
             try:
                 # Convert each chunk to the requested format if not WAV
                 if request.response_format != ResponseFormatEnum.WAV:
-                    converted_chunk = convert_audio_format(audio_chunk, request.response_format)
+                    converted_chunk = convert_audio_format(
+                        audio_chunk, request.response_format
+                    )
                     yield converted_chunk
                 else:
                     yield audio_chunk
@@ -129,7 +131,7 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
     text = request.input
     model = request.model
     params = request.params or {}
-    
+
     if model == "hexgrad/Kokoro-82M":
         result = kokoro_adapter(
             text,
@@ -160,11 +162,11 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
         result = rvc_adapter(result, params["rvc_params"])
 
     result = webui_to_wav(result)
-    
+
     # Convert to requested format if not WAV
     if request.response_format != ResponseFormatEnum.WAV:
         result = convert_audio_format(result, request.response_format)
-    
+
     return result
 
 
@@ -195,7 +197,7 @@ def preset_adapter(request: CreateSpeechRequest, text):
 def rvc_adapter(audio_result, rvc_params):
     import tempfile
     import os
-    
+
     try:
         from extension_rvc.rvc_tab import run_rvc
     except ImportError:
@@ -228,6 +230,7 @@ def using_with_params_decorator(func):
         name = name.replace("_adapter", "")
         print(f"Using {name} with params: {args}, {kwargs}")
         return func(*args, **kwargs)
+
     return wrapper
 
 
@@ -246,7 +249,7 @@ def kokoro_adapter(text, params):
 @using_with_params_decorator
 def chatterbox_adapter(text, params):
     try:
-        from extension_chatterbox.gradio_app import tts
+        from extension_chatterbox.api import tts
     except ImportError:
         raise ImportError(
             "Chatterbox extension is not installed. Please install it with `pip install git+https://github.com/rsxdalv/extension_chatterbox@main`"
@@ -261,34 +264,34 @@ def to_wav_streaming_header(sample_rate, estimated_length=None):
     we'll use a placeholder that can be updated later.
     """
     import struct
-    
+
     # WAV format parameters
     channels = 1
     bits_per_sample = 16
     byte_rate = sample_rate * channels * bits_per_sample // 8
     block_align = channels * bits_per_sample // 8
-    
+
     # If we don't know the length, use a large placeholder
     if estimated_length is None:
         data_size = 0xFFFFFFFF - 36  # Max size minus header
     else:
         data_size = estimated_length * channels * bits_per_sample // 8
-    
+
     # Create WAV header
-    header = b'RIFF'
-    header += struct.pack('<I', data_size + 36)  # File size - 8
-    header += b'WAVE'
-    header += b'fmt '
-    header += struct.pack('<I', 16)  # PCM header size
-    header += struct.pack('<H', 1)   # PCM format
-    header += struct.pack('<H', channels)
-    header += struct.pack('<I', sample_rate)
-    header += struct.pack('<I', byte_rate)
-    header += struct.pack('<H', block_align)
-    header += struct.pack('<H', bits_per_sample)
-    header += b'data'
-    header += struct.pack('<I', data_size)
-    
+    header = b"RIFF"
+    header += struct.pack("<I", data_size + 36)  # File size - 8
+    header += b"WAVE"
+    header += b"fmt "
+    header += struct.pack("<I", 16)  # PCM header size
+    header += struct.pack("<H", 1)  # PCM format
+    header += struct.pack("<H", channels)
+    header += struct.pack("<I", sample_rate)
+    header += struct.pack("<I", byte_rate)
+    header += struct.pack("<H", block_align)
+    header += struct.pack("<H", bits_per_sample)
+    header += b"data"
+    header += struct.pack("<I", data_size)
+
     return header
 
 
@@ -298,32 +301,33 @@ def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
     First yields a WAV header, then raw audio data chunks.
     """
     try:
-        from extension_chatterbox.gradio_app import tts_stream
+        from extension_chatterbox.api import tts_stream
     except ImportError:
         raise ImportError(
             "Chatterbox extension is not installed or doesn't support streaming. "
             "Please install it with `pip install git+https://github.com/rsxdalv/extension_chatterbox@main`"
         )
-    
+
     print(f"Using chatterbox streaming with params: {params}")
-    
+
     header_sent = False
     sample_rate = None
-    
+
     try:
         for partial_result in tts_stream(text, **params):
             if partial_result and "audio_out" in partial_result:
                 current_sample_rate, audio_data = partial_result["audio_out"]
-                
+
                 if not header_sent:
                     # Send WAV header with first chunk
                     sample_rate = current_sample_rate
                     header = to_wav_streaming_header(sample_rate)
                     yield header
                     header_sent = True
-                
+
                 # Convert audio data to bytes and send
                 import numpy as np
+
                 if audio_data.dtype == np.float32 or audio_data.dtype == np.float64:
                     # Convert float to int16
                     if np.max(np.abs(audio_data)) > 1.0:
@@ -334,9 +338,9 @@ def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
                     if np.max(np.abs(audio_data)) > 32767:
                         audio_data = audio_data * (32767 / np.max(np.abs(audio_data)))
                     audio_data = audio_data.astype(np.int16)
-                
+
                 yield audio_data.tobytes()
-                    
+
     except Exception as e:
         print(f"Error in streaming chatterbox: {e}")
         # Fallback to non-streaming if streaming fails
@@ -379,18 +383,18 @@ def convert_audio_format(audio_data: bytes, format: ResponseFormatEnum) -> bytes
     """Convert audio data to the specified format"""
     if format == ResponseFormatEnum.WAV:
         return audio_data
-    
+
     # Convert format enum to string
     format_str = format.value.lower()
-    
+
     # For other formats, use ffmpeg
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_in:
         temp_in_path = temp_in.name
         temp_in.write(audio_data)
         temp_in.flush()
-    
+
     temp_out_path = temp_in_path.replace(".wav", f".{format_str}")
-    
+
     try:
         # Use ffmpeg to convert the format
         (
@@ -399,16 +403,15 @@ def convert_audio_format(audio_data: bytes, format: ResponseFormatEnum) -> bytes
             # .output(temp_out_path, format=format_str)
             # .run(quiet=False, overwrite_output=True)
             # [opus @ 0000028343F907C0] The encoder 'opus' is experimental but experimental codecs are not enabled, add '-strict -2' if you want to use it.
-            ffmpeg
-            .input(temp_in_path)
+            ffmpeg.input(temp_in_path)
             .output(temp_out_path, format=format_str, strict=-2)
             .run(quiet=False, overwrite_output=True)
         )
-        
+
         # Read the converted file
         with open(temp_out_path, "rb") as f:
             converted_data = f.read()
-            
+
         return converted_data
     except Exception as e:
         print(f"Error converting audio format: {e}")
@@ -465,8 +468,8 @@ async def create_speech(
                 media_type=content_type,
                 headers={
                     "Content-Disposition": f"attachment; filename=speech_{uuid.uuid4()}.{request.response_format}",
-                    "Transfer-Encoding": "chunked"
-                }
+                    "Transfer-Encoding": "chunked",
+                },
             )
         else:
             # Return regular response for non-streaming models or when streaming is disabled
@@ -482,6 +485,7 @@ async def create_speech(
     except Exception as e:
         print(f"Error generating speech: {e}")
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -518,9 +522,63 @@ async def root():
                     "stream": true
                 }' \\
                 --output speech_stream.wav
-            """
+            """,
         },
     }
+
+
+def get_voices_by_model(model: str):
+    """Get available voices for a specific model"""
+    import os
+
+    if model == "chatterbox":
+        return get_chatterbox_voices()
+    elif model == "kokoro":
+        return get_kokoro_voices()
+    else:
+        return []
+
+
+def get_kokoro_voices():
+    from extension_kokoro.CHOICES import CHOICES
+
+    voices = list(CHOICES.values())
+    return voices
+
+
+def _get_chatterbox_voices_broken():
+    from extension_chatterbox.api import get_voices
+
+    # This has absolute paths but we need relative ones for proper API handling
+    voice_files = get_voices()
+
+    return [{"value": "random", "label": "Random"}] + [
+        {"value": filepath, "label": filename.replace(".wav", "")}
+        for filename, filepath in voice_files
+    ]
+
+def get_chatterbox_voices():
+    # convert to use
+    from extension_chatterbox.api import get_voices
+    import os
+
+    return [
+        {"value": "random", "label": "Random"}
+    ] + [
+        {"value": os.path.join("voices/chatterbox/", file), "label": file.replace(".wav", "")}
+        for file in os.listdir("voices/chatterbox")
+        if file.endswith(".wav")
+    ]
+
+# Add a route to get voices for a specific model
+@app.get("/v1/audio/voices/{model}")
+async def get_voices(model: str):
+    try:
+        voices = get_voices_by_model(model)
+        return {"voices": voices}
+    except Exception as e:
+        print(f"Error getting voices for model {model}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
