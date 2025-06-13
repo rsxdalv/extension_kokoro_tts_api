@@ -39,7 +39,7 @@ class CreateSpeechRequest(BaseModel):
     )
     voice: str = Field(..., description="The voice to use when generating the audio")
     response_format: ResponseFormatEnum = Field(
-        default=ResponseFormatEnum.MP3, description="The format to audio in"
+        default=ResponseFormatEnum.WAV, description="The format to audio in"
     )
     speed: float = Field(
         default=1.0, description="The speed of the generated audio", ge=0.25, le=4.0
