@@ -106,13 +106,13 @@ def generate_speech_stream(request: CreateSpeechRequest) -> Iterator[bytes]:
         ):
             try:
                 # Convert each chunk to the requested format if not WAV
-                if request.response_format != ResponseFormatEnum.WAV:
-                    converted_chunk = convert_audio_format(
-                        audio_chunk, request.response_format
-                    )
-                    yield converted_chunk
-                else:
-                    yield audio_chunk
+                # if request.response_format != ResponseFormatEnum.WAV:
+                #     converted_chunk = convert_audio_format(
+                #         audio_chunk, request.response_format
+                #     )
+                #     yield converted_chunk
+                # else:
+                yield audio_chunk
             except Exception as e:
                 print(f"Error converting chunk: {e}")
                 # Fall back to original format if conversion fails
@@ -164,8 +164,8 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
     result = webui_to_wav(result)
 
     # Convert to requested format if not WAV
-    if request.response_format != ResponseFormatEnum.WAV:
-        result = convert_audio_format(result, request.response_format)
+    # if request.response_format != ResponseFormatEnum.WAV:
+    #     result = convert_audio_format(result, request.response_format)
 
     return result
 
