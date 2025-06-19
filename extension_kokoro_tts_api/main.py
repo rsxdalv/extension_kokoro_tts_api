@@ -4,6 +4,7 @@ import gradio as gr
 from .extension_tts_generation_webui_metadata import (
     extension_tts_generation_webui_metadata,
 )
+from tts_webui.config.config_utils import get_config_value, set_config_value
 
 # from .threader import (
 #     activate_api,
@@ -195,6 +196,16 @@ def startup_ui():
                 api_name="activate_api",
             )
 
+            auto_start_api = gr.Checkbox(
+                label="Auto start API",
+                value=lambda: get_config_value("extension_kokoro_tts_api", "auto_start", False),
+            )
+            auto_start_api.change(
+                fn=lambda x: set_config_value("extension_kokoro_tts_api", "auto_start", x),
+                inputs=[auto_start_api],
+                outputs=[],
+            )
+
             # deactivate_api_btn = gr.Button("Deactivate API")
             # deactivate_api_btn.click(
             #     fn=deactivate_api,
@@ -287,7 +298,10 @@ def extension__tts_generation_webui():
 
 
 ENV_AUTO_ACTIVATE_OPENAI_API = os.environ.get("AUTO_ACTIVATE_OPENAI_API", "0")
-if ENV_AUTO_ACTIVATE_OPENAI_API == "1":
+config_auto_activate_openai_api = get_config_value(
+    "extension_kokoro_tts_api", "auto_start", False
+)
+if ENV_AUTO_ACTIVATE_OPENAI_API == "1" or config_auto_activate_openai_api:
     activate_api()
 
 
