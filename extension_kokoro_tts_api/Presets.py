@@ -75,7 +75,12 @@ class PresetManager:
         return self.presets
 
     def get_preset(self, model_name, voice_name):
-        return self.presets.get(model_name, {}).get(voice_name, {})
+        presets = self.presets.get("global_preset", {})
+        voice_preset = presets.get(voice_name, {})
+        if voice_preset:
+            return voice_preset
+        else:
+            raise ValueError(f"Preset {voice_name} not found, available presets: {list(presets.keys())}")
 
 
 preset_manager = PresetManager()
