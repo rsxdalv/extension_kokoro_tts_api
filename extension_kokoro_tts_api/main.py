@@ -12,8 +12,10 @@ from tts_webui.config.config_utils import get_config_value, set_config_value
 #     get_api_status,
 # )
 
+
 def activate_api(host=None, port=None):
-    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
+    host = host or get_config_value(
+        "extension_kokoro_tts_api", "host", "0.0.0.0")
     port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     from .api import app
 
@@ -38,7 +40,8 @@ def get_api_status():
 
 
 def test_api(host=None, port=None):
-    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
+    host = host or get_config_value(
+        "extension_kokoro_tts_api", "host", "0.0.0.0")
     port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     import requests
 
@@ -63,14 +66,16 @@ def test_api(host=None, port=None):
 
 
 def test_api_with_open_ai(host=None, port=None):
-    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
+    host = host or get_config_value(
+        "extension_kokoro_tts_api", "host", "0.0.0.0")
     port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     from openai import OpenAI
 
     if host == "0.0.0.0":
         host = "localhost"
 
-    client = OpenAI(api_key="sk-1234567890", base_url=f"http://{host}:{port}/v1")
+    client = OpenAI(api_key="sk-1234567890",
+                    base_url=f"http://{host}:{port}/v1")
 
     with client.audio.speech.with_streaming_response.create(
         model="hexgrad/Kokoro-82M",
@@ -189,19 +194,23 @@ def startup_ui():
 
             host = gr.Textbox(
                 label="Host",
-                value=lambda: get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
+                value=lambda: get_config_value(
+                    "extension_kokoro_tts_api", "host", "0.0.0.0")
             )
             port = gr.Number(
                 label="Port",
-                value=lambda: get_config_value("extension_kokoro_tts_api", "port", 7778)
+                value=lambda: get_config_value(
+                    "extension_kokoro_tts_api", "port", 7778)
             )
             host.change(
-                fn=lambda x: set_config_value("extension_kokoro_tts_api", "host", x),
+                fn=lambda x: set_config_value(
+                    "extension_kokoro_tts_api", "host", x),
                 inputs=[host],
                 outputs=[]
             )
             port.change(
-                fn=lambda x: set_config_value("extension_kokoro_tts_api", "port", x),
+                fn=lambda x: set_config_value(
+                    "extension_kokoro_tts_api", "port", x),
                 inputs=[port],
                 outputs=[]
             )
@@ -216,10 +225,12 @@ def startup_ui():
 
             auto_start_api = gr.Checkbox(
                 label="Auto start API",
-                value=lambda: get_config_value("extension_kokoro_tts_api", "auto_start", False),
+                value=lambda: get_config_value(
+                    "extension_kokoro_tts_api", "auto_start", False),
             )
             auto_start_api.change(
-                fn=lambda x: set_config_value("extension_kokoro_tts_api", "auto_start", x),
+                fn=lambda x: set_config_value(
+                    "extension_kokoro_tts_api", "auto_start", x),
                 inputs=[auto_start_api],
                 outputs=[],
             )
@@ -255,7 +266,7 @@ def startup_ui():
             import requests
 
             response = requests.post(
-                "http://localhost:{PORT}/v1/audio/speech",
+                "http://localhost:7778/v1/audio/speech",
                 json={{
                     "model": "hexgrad/Kokoro-82M",
                     "input": "Hello world with custom parameters.",
@@ -288,7 +299,7 @@ def startup_ui():
             ```python
             from openai import OpenAI
 
-            client = OpenAI(api_key="sk-1234567890", base_url="http://localhost:{PORT}/v1")
+            client = OpenAI(api_key="sk-1234567890", base_url="http://localhost:7778/v1")
 
             with client.audio.speech.with_streaming_response.create(
                 model="hexgrad/Kokoro-82M",
