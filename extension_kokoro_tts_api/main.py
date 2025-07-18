@@ -180,7 +180,7 @@ def ui():
 def startup_ui():
     with gr.Row():
         with gr.Column():
-            url = f"""{get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")}:{get_config_value("extension_kokoro_tts_api", "port", 7778)}"""
+            url = f"""localhost:{get_config_value("extension_kokoro_tts_api", "port", 7778)}"""
             gr.Markdown(
                 f"""
                 This extension adds an API endpoint for the Kokoro TTS & Chatterbox models. You can use this to generate audio from text.
