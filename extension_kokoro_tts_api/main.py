@@ -180,15 +180,16 @@ def ui():
 def startup_ui():
     with gr.Row():
         with gr.Column():
+            url = f"""{get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")}:{get_config_value("extension_kokoro_tts_api", "port", 7778)}"""
             gr.Markdown(
                 f"""
                 This extension adds an API endpoint for the Kokoro TTS & Chatterbox models. You can use this to generate audio from text.
                 
                 To use the API, you need to activate it. This will start the API server and you can then use the API endpoint.
                 
-                The default API endpoint is http://{get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")}:{get_config_value("extension_kokoro_tts_api", "port", 7778)}/v1/audio/speech
+                The default API endpoint is http://{url}/v1/audio/speech
                 
-                The default OpenAI API Base_url is http://{get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")}:{get_config_value("extension_kokoro_tts_api", "port", 7778)}/v1/
+                The default OpenAI API Base_url is http://{url}/v1/
                 """
             )
 
@@ -266,7 +267,7 @@ def startup_ui():
             import requests
 
             response = requests.post(
-                "http://localhost:7778/v1/audio/speech",
+                "http://{url}/v1/audio/speech",
                 json={{
                     "model": "hexgrad/Kokoro-82M",
                     "input": "Hello world with custom parameters.",
@@ -299,7 +300,7 @@ def startup_ui():
             ```python
             from openai import OpenAI
 
-            client = OpenAI(api_key="sk-1234567890", base_url="http://localhost:7778/v1")
+            client = OpenAI(api_key="sk-1234567890", base_url="http://{url}/v1")
 
             with client.audio.speech.with_streaming_response.create(
                 model="hexgrad/Kokoro-82M",
