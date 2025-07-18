@@ -12,11 +12,9 @@ from tts_webui.config.config_utils import get_config_value, set_config_value
 #     get_api_status,
 # )
 
-PORT = 7778
-HOST = "0.0.0.0"
-
-
-def activate_api(host=HOST, port=PORT):
+def activate_api(host=None, port=None):
+    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
+    port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     from .api import app
 
     import uvicorn
@@ -39,7 +37,9 @@ def get_api_status():
     return {"status": "not implemented"}
 
 
-def test_api(host=HOST, port=PORT):
+def test_api(host=None, port=None):
+    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
+    port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     import requests
 
     if host == "0.0.0.0":
@@ -62,7 +62,9 @@ def test_api(host=HOST, port=PORT):
     return audio
 
 
-def test_api_with_open_ai(host=HOST, port=PORT):
+def test_api_with_open_ai(host=None, port=None):
+    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
+    port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     from openai import OpenAI
 
     if host == "0.0.0.0":
@@ -179,14 +181,30 @@ def startup_ui():
                 
                 To use the API, you need to activate it. This will start the API server and you can then use the API endpoint.
                 
-                The default API endpoint is http://localhost:{PORT}/v1/audio/speech
+                The default API endpoint is http://{get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")}:{get_config_value("extension_kokoro_tts_api", "port", 7778)}/v1/audio/speech
                 
-                The default OpenAI API Base_url is http://localhost:{PORT}/v1/
+                The default OpenAI API Base_url is http://{get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")}:{get_config_value("extension_kokoro_tts_api", "port", 7778)}/v1/
                 """
             )
 
-            host = gr.Textbox(label="Host", value=HOST)
-            port = gr.Number(label="Port", value=PORT)
+            host = gr.Textbox(
+                label="Host",
+                value=lambda: get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
+            )
+            port = gr.Number(
+                label="Port",
+                value=lambda: get_config_value("extension_kokoro_tts_api", "port", 7778)
+            )
+            host.change(
+                fn=lambda x: set_config_value("extension_kokoro_tts_api", "host", x),
+                inputs=[host],
+                outputs=[]
+            )
+            port.change(
+                fn=lambda x: set_config_value("extension_kokoro_tts_api", "port", x),
+                inputs=[port],
+                outputs=[]
+            )
 
             activate_api_btn = gr.Button("Activate API")
             activate_api_btn.click(
