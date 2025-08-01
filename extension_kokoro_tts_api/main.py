@@ -52,10 +52,10 @@ def test_api(host=HOST, port=PORT):
             "input": "Hello world with custom parameters.",
             "voice": "af_heart",
             "speed": 1.0,
-            "params": {
-                "pitch_up_key": "2",
-                "index_path": "CaitArcane/added_IVF65_Flat_nprobe_1_CaitArcane_v2",
-            },
+            # "params": {
+            #     "pitch_up_key": "2",
+            #     "index_path": "CaitArcane/added_IVF65_Flat_nprobe_1_CaitArcane_v2",
+            # },
         },
     )
     audio = response.content
@@ -77,17 +77,17 @@ def test_api_with_open_ai(host=HOST, port=PORT):
         extra_body={
             "params": {
                 "use_gpu": True,
-                "rvc_params": {
-                    "pitch_up_key": "0",
-                    "index_path": "CaitArcane\\added_IVF65_Flat_nprobe_1_CaitArcane_v2",
-                    "pitch_collection_method": "harvest",
-                    "model_path": "CaitArcane\\CaitArcane",
-                    "index_rate": 0.66,
-                    "filter_radius": 3,
-                    "resample_sr": 0,
-                    "rms_mix_rate": 1,
-                    "protect": 0.33,
-                },
+                # "rvc_params": {
+                #     "pitch_up_key": "0",
+                #     "index_path": "CaitArcane\\added_IVF65_Flat_nprobe_1_CaitArcane_v2",
+                #     "pitch_collection_method": "harvest",
+                #     "model_path": "CaitArcane\\CaitArcane",
+                #     "index_rate": 0.66,
+                #     "filter_radius": 3,
+                #     "resample_sr": 0,
+                #     "rms_mix_rate": 1,
+                #     "protect": 0.33,
+                # },
             },
         },
     ) as response:
