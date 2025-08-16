@@ -12,11 +12,11 @@ from tts_webui.config.config_utils import get_config_value, set_config_value
 #     get_api_status,
 # )
 
-PORT = 7778
-HOST = "0.0.0.0"
 
-
-def activate_api(host=HOST, port=PORT):
+def activate_api(host=None, port=None):
+    host = host or get_config_value(
+        "extension_kokoro_tts_api", "host", "0.0.0.0")
+    port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     from .api import app
 
     import uvicorn
@@ -39,7 +39,10 @@ def get_api_status():
     return {"status": "not implemented"}
 
 
-def test_api(host=HOST, port=PORT):
+def test_api(host=None, port=None):
+    host = host or get_config_value(
+        "extension_kokoro_tts_api", "host", "0.0.0.0")
+    port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     import requests
 
     if host == "0.0.0.0":
@@ -62,13 +65,17 @@ def test_api(host=HOST, port=PORT):
     return audio
 
 
-def test_api_with_open_ai(host=HOST, port=PORT):
+def test_api_with_open_ai(host=None, port=None):
+    host = host or get_config_value(
+        "extension_kokoro_tts_api", "host", "0.0.0.0")
+    port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     from openai import OpenAI
 
     if host == "0.0.0.0":
         host = "localhost"
 
-    client = OpenAI(api_key="sk-1234567890", base_url=f"http://{host}:{port}/v1")
+    client = OpenAI(api_key="sk-1234567890",
+                    base_url=f"http://{host}:{port}/v1")
 
     with client.audio.speech.with_streaming_response.create(
         model="hexgrad/Kokoro-82M",
@@ -173,20 +180,41 @@ def ui():
 def startup_ui():
     with gr.Row():
         with gr.Column():
+            url = f"""localhost:{get_config_value("extension_kokoro_tts_api", "port", 7778)}"""
             gr.Markdown(
                 f"""
                 This extension adds an API endpoint for the Kokoro TTS & Chatterbox models. You can use this to generate audio from text.
                 
                 To use the API, you need to activate it. This will start the API server and you can then use the API endpoint.
                 
-                The default API endpoint is http://localhost:{PORT}/v1/audio/speech
+                The default API endpoint is http://{url}/v1/audio/speech
                 
-                The default OpenAI API Base_url is http://localhost:{PORT}/v1/
+                The default OpenAI API Base_url is http://{url}/v1/
                 """
             )
 
-            host = gr.Textbox(label="Host", value=HOST)
-            port = gr.Number(label="Port", value=PORT)
+            host = gr.Textbox(
+                label="Host",
+                value=lambda: get_config_value(
+                    "extension_kokoro_tts_api", "host", "0.0.0.0")
+            )
+            port = gr.Number(
+                label="Port",
+                value=lambda: get_config_value(
+                    "extension_kokoro_tts_api", "port", 7778)
+            )
+            host.change(
+                fn=lambda x: set_config_value(
+                    "extension_kokoro_tts_api", "host", x),
+                inputs=[host],
+                outputs=[]
+            )
+            port.change(
+                fn=lambda x: set_config_value(
+                    "extension_kokoro_tts_api", "port", x),
+                inputs=[port],
+                outputs=[]
+            )
 
             activate_api_btn = gr.Button("Activate API")
             activate_api_btn.click(
@@ -198,10 +226,12 @@ def startup_ui():
 
             auto_start_api = gr.Checkbox(
                 label="Auto start API",
-                value=lambda: get_config_value("extension_kokoro_tts_api", "auto_start", False),
+                value=lambda: get_config_value(
+                    "extension_kokoro_tts_api", "auto_start", False),
             )
             auto_start_api.change(
-                fn=lambda x: set_config_value("extension_kokoro_tts_api", "auto_start", x),
+                fn=lambda x: set_config_value(
+                    "extension_kokoro_tts_api", "auto_start", x),
                 inputs=[auto_start_api],
                 outputs=[],
             )
@@ -237,7 +267,7 @@ def startup_ui():
             import requests
 
             response = requests.post(
-                "http://localhost:{PORT}/v1/audio/speech",
+                "http://{url}/v1/audio/speech",
                 json={{
                     "model": "hexgrad/Kokoro-82M",
                     "input": "Hello world with custom parameters.",
@@ -270,7 +300,7 @@ def startup_ui():
             ```python
             from openai import OpenAI
 
-            client = OpenAI(api_key="sk-1234567890", base_url="http://localhost:{PORT}/v1")
+            client = OpenAI(api_key="sk-1234567890", base_url="http://{url}/v1")
 
             with client.audio.speech.with_streaming_response.create(
                 model="hexgrad/Kokoro-82M",
