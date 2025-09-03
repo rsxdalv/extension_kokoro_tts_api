@@ -1,26 +1,35 @@
-from fastapi import FastAPI, HTTPException, Response, BackgroundTasks
+import logging
+import os
+import tempfile
+import uuid
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, Iterator, Optional, Union
+
+import ffmpeg
+import uvicorn
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, validator
-from enum import Enum
-from typing import Optional, Union, Dict, Any, Iterator
-import uuid
-import io
-import ffmpeg
-import numpy as np
-import tempfile
-import os
 
+
+
+from .to_wav_streaming_header import to_wav_streaming_header
+from .transcribe_audio_file import transcribe_audio_file
 from .Presets import preset_manager
+from .ResponseFormatEnum import ResponseFormatEnum
 
 
-class ResponseFormatEnum(str, Enum):
-    MP3 = "mp3"
-    OPUS = "opus"
-    AAC = "aac"
-    FLAC = "flac"
-    WAV = "wav"
-    PCM = "pcm"
+logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.DEBUG)
 
 
 class ModelEnum(str, Enum):
@@ -76,7 +85,11 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=[
+        "*",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],  # Allows all origins
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
@@ -256,43 +269,6 @@ def chatterbox_adapter(text, params):
         )
 
     return tts(text, **params)
-
-
-def to_wav_streaming_header(sample_rate, estimated_length=None):
-    """
-    Create a WAV header for streaming. If estimated_length is None,
-    we'll use a placeholder that can be updated later.
-    """
-    import struct
-
-    # WAV format parameters
-    channels = 1
-    bits_per_sample = 16
-    byte_rate = sample_rate * channels * bits_per_sample // 8
-    block_align = channels * bits_per_sample // 8
-
-    # If we don't know the length, use a large placeholder
-    if estimated_length is None:
-        data_size = 0xFFFFFFFF - 36  # Max size minus header
-    else:
-        data_size = estimated_length * channels * bits_per_sample // 8
-
-    # Create WAV header
-    header = b"RIFF"
-    header += struct.pack("<I", data_size + 36)  # File size - 8
-    header += b"WAVE"
-    header += b"fmt "
-    header += struct.pack("<I", 16)  # PCM header size
-    header += struct.pack("<H", 1)  # PCM format
-    header += struct.pack("<H", channels)
-    header += struct.pack("<I", sample_rate)
-    header += struct.pack("<I", byte_rate)
-    header += struct.pack("<H", block_align)
-    header += struct.pack("<H", bits_per_sample)
-    header += b"data"
-    header += struct.pack("<I", data_size)
-
-    return header
 
 
 def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
@@ -503,7 +479,7 @@ async def root():
         "documentation": "/docs",
         "example": {
             "curl_regular": """
-            curl -X POST http://localhost:8000/v1/audio/speech \\
+            curl -X POST http://localhost:7778/v1/audio/speech \\
                 -H "Content-Type: application/json" \\
                 -d '{
                     "model": "tts-1",
@@ -513,7 +489,7 @@ async def root():
                 --output speech.mp3
             """,
             "curl_streaming": """
-            curl -X POST http://localhost:8000/v1/audio/speech \\
+            curl -X POST http://localhost:7778/v1/audio/speech \\
                 -H "Content-Type: application/json" \\
                 -d '{
                     "model": "chatterbox",
@@ -529,12 +505,12 @@ async def root():
 
 def get_voices_by_model(model: str):
     """Get available voices for a specific model"""
-    import os
-
     if model == "chatterbox":
         return get_chatterbox_voices()
     elif model == "kokoro":
         return get_kokoro_voices()
+    elif model == "global_preset":
+        return get_global_preset_voices()
     else:
         return []
 
@@ -542,7 +518,7 @@ def get_voices_by_model(model: str):
 def get_kokoro_voices():
     from extension_kokoro.CHOICES import CHOICES
 
-    voices = list(CHOICES.values())
+    voices = [{"value": key, "label": value} for key, value in CHOICES.items()]
     return voices
 
 
@@ -557,18 +533,23 @@ def _get_chatterbox_voices_broken():
         for filename, filepath in voice_files
     ]
 
+
 def get_chatterbox_voices():
-    # convert to use
-    from extension_chatterbox.api import get_voices
     import os
 
-    return [
-        {"value": "random", "label": "Random"}
-    ] + [
-        {"value": os.path.join("voices/chatterbox/", file), "label": file.replace(".wav", "")}
+    return [{"value": "random", "label": "Random"}] + [
+        {
+            "value": os.path.join("voices/chatterbox/", file),
+            "label": file.replace(".wav", ""),
+        }
         for file in os.listdir("voices/chatterbox")
         if file.endswith(".wav")
     ]
+
+
+def get_global_preset_voices():
+    return preset_manager.get_all_presets()
+
 
 # Add a route to get voices for a specific model
 @app.get("/v1/audio/voices/{model}")
@@ -579,6 +560,103 @@ async def get_voices(model: str):
     except Exception as e:
         print(f"Error getting voices for model {model}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/v1/audio/voices")
+async def get_all_voices():
+    try:
+        voices = []
+        for model in ["chatterbox", "kokoro", "global_preset"]:
+            try:
+                voices.extend(get_voices_by_model(model))
+            except Exception as e:
+                pass
+        for voice in voices:
+            voice["id"] = voice.pop("value")
+            voice["name"] = voice.pop("label")
+        return {"voices": voices}
+    except Exception as e:
+        print(f"Error getting voices: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/v1/audio/models")
+async def get_models():
+    return {
+        "models": [
+            {"id": "hexgrad/Kokoro-82M"},
+            {"id": "chatterbox"},
+            {"id": "global_preset"},
+        ]
+    }
+
+@app.post("/v1/audio/transcriptions")
+async def transcribe_audio(request: Request):
+    request_id = id(request)  # Simple request ID for tracking
+
+    try:
+        logger.info(f"[{request_id}] Received transcription request")
+
+        content_type = request.headers.get("content-type", "")
+        if "multipart/form-data" not in content_type:
+            raise HTTPException(status_code=400, detail=f"Invalid content type {content_type}")
+
+        form = await request.form()
+        logger.debug(f"[{request_id}] Form fields: {list(form.keys())}")
+        audio_file = form.get("file")
+        model = form.get("model", "whisper-1")
+
+        if not audio_file:
+            raise HTTPException(status_code=400, detail="Missing audio_file")
+
+        # Handle file for Whisper transcription
+        tmp_path = None
+        try:
+            # Get file extension for proper temp file handling
+            filename = getattr(audio_file, "filename", "audio.webm")
+            file_ext = Path(filename).suffix or ".webm"
+
+            logger.debug(f"[{request_id}] File extension: {file_ext}")
+
+            # Create temporary file with proper extension
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp:
+                # Read file contents
+                if hasattr(audio_file, "read"):
+                    # UploadFile object
+                    contents = await audio_file.read()
+                    logger.debug(
+                        f"[{request_id}] Read {len(contents)} bytes from upload file"
+                    )
+                else:
+                    # Handle other file-like objects
+                    contents = audio_file
+                    logger.debug(
+                        f"[{request_id}] Using provided file data: {len(contents)} bytes"
+                    )
+
+                tmp.write(contents)
+                tmp.flush()
+                tmp_path = tmp.name
+
+            logger.info(f"[{request_id}] Created temporary file: {tmp_path}")
+
+            # Call the transcription service with file path
+            transcription = await transcribe_audio_file(tmp_path, model)
+
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+        return {"text": transcription}
+
+    except HTTPException:
+        # Re-raise HTTP exceptions without logging as errors
+        raise
+    except Exception as e:
+        logger.error(f"[{request_id}] Transcription failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500, detail="Internal server error during transcription"
+        )
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ def activate_api(host=None, port=None):
     host = host or get_config_value(
         "extension_kokoro_tts_api", "host", "0.0.0.0")
     port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
-    from .api import app
+    from .router import app
 
     import uvicorn
 
@@ -151,7 +151,7 @@ def extra_functions_ui():
     )
 
     def test_api_with_open_ai(params):
-        from .api import preset_adapter, CreateSpeechRequest
+        from .router import preset_adapter, CreateSpeechRequest
 
         request = CreateSpeechRequest(**params)
         text = request.input

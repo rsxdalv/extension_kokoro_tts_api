@@ -82,5 +82,11 @@ class PresetManager:
         else:
             raise ValueError(f"Preset {voice_name} not found, available presets: {list(presets.keys())}")
 
+    def get_all_presets(self):
+        def iter_voice_presets():
+            for voice_name, voice_params in self.presets.get("global_preset", {}).items():
+                yield { "value": voice_name, "label": voice_params.get("label", voice_name) }
+
+        return list(iter_voice_presets())
 
 preset_manager = PresetManager()
