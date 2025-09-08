@@ -23,3 +23,5 @@ ENV/
 *.pt
 *.bin
 *.safetensors
+
+data/api/presets

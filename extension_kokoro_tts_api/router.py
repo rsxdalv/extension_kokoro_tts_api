@@ -166,6 +166,15 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 **params,
             },
         )
+    elif model == "kitten-tts":
+        result = kitten_tts_adapter(
+            text,
+            {
+                "voice": request.voice,
+                "speed": request.speed,
+                **params,
+            },
+        )
     elif model == "global_preset":
         result = preset_adapter(request, text)
     else:
@@ -188,6 +197,8 @@ def generic_tts_adapter(text, params, model):
         return kokoro_adapter(text, params)
     elif model == "chatterbox":
         return chatterbox_adapter(text, params)
+    elif model == "kitten-tts":
+        return kitten_tts_adapter(text, params)
     else:
         raise ValueError(f"Model {model} not found")
 
@@ -258,6 +269,16 @@ def kokoro_adapter(text, params):
 
     return tts(text=text, **params)
 
+@using_with_params_decorator
+def kitten_tts_adapter(text, params):
+    try:
+        from extension_kitten_tts.api import tts
+    except ImportError:
+        raise ImportError(
+            "Kitten TTS extension is not installed. Please install it to use Kitten TTS features."
+        )
+
+    return tts(model_name="KittenML/kitten-tts-mini-0.1", text=text, **params)
 
 @using_with_params_decorator
 def chatterbox_adapter(text, params):

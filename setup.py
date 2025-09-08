@@ -31,6 +31,9 @@ setuptools.setup(
         "chatterbox": [
             "extension_chatterbox @ git+https://github.com/rsxdalv/extension_chatterbox@main",
         ],
+        "kitten-tts": [
+            "extension_kitten_tts @ git+https://github.com/rsxdalv/extension_kitten_tts@main",
+        ],
     },
     classifiers=[
         "Programming Language :: Python :: 3",
