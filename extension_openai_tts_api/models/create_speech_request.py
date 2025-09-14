@@ -9,6 +9,8 @@ class ModelEnum(str, Enum):
     KOKORO = "hexgrad/Kokoro-82M"
     CHATTERBOX = "chatterbox"
     GLOBAL_PRESET = "global_preset"
+    STYLETTS2 = "styletts2"
+    F5_TTS = "f5-tts"
 
 
 class CreateSpeechRequest(BaseModel):

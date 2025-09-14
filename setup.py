@@ -3,7 +3,7 @@ import setuptools
 setuptools.setup(
     name="extension_openai_tts_api",
     packages=setuptools.find_namespace_packages(),
-    version="0.12.1",
+    version="0.13.0",
     author="rsxdalv",
     description="OpenAI compatible TTS API with support for multiple TTS models",
     url="https://github.com/rsxdalv/extension_openai_tts_api",
@@ -33,6 +33,12 @@ setuptools.setup(
         ],
         "kitten-tts": [
             "extension_kitten_tts @ git+https://github.com/rsxdalv/extension_kitten_tts@main",
+        ],
+        "styletts2": [
+            "extension_styletts2 @ git+https://github.com/rsxdalv/extension_styletts2@main",
+        ],
+        "f5-tts": [
+            "extension_f5_tts @ git+https://github.com/rsxdalv/extension_f5_tts@main",
         ],
     },
     classifiers=[

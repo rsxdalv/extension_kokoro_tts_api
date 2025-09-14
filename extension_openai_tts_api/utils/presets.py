@@ -51,6 +51,22 @@ class PresetManager:
                         "dtype": "float32",
                     },
                 },
+                "styletts2_default": {
+                    "model": "styletts2",
+                    "params": {
+                        "style": "default",
+                        "voice": "default",
+                        "device": "auto",
+                        "dtype": "float32",
+                    },
+                },
+                "f5_tts_default": {
+                    "model": "f5-tts",
+                    "params": {
+                        "voice": "default",
+                        "device": "auto",
+                    },
+                },
             },
             "old_presets": old_presets,
         }

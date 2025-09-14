@@ -77,6 +77,24 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 **params,
             },
         )
+    elif model == "styletts2":
+        result = styletts2_adapter(
+            text,
+            {
+                "voice": request.voice,
+                "speed": request.speed,
+                **params,
+            },
+        )
+    elif model == "f5-tts":
+        result = f5_tts_adapter(
+            text,
+            {
+                "voice": request.voice,
+                "speed": request.speed,
+                **params,
+            },
+        )
     elif model == "kitten-tts":
         result = kitten_tts_adapter(
             text,
@@ -154,6 +172,27 @@ def chatterbox_adapter(text, params):
     return tts(text, **params)
 
 
+@using_with_params_decorator
+def styletts2_adapter(text, params):
+    try:
+        from extension_styletts2.main import tts
+    except ImportError:
+        raise ImportError(
+            "StyleTTS2 extension is not installed. Please install it with `pip install git+https://github.com/rsxdalv/extension_styletts2@main` or your preferred source."
+        )
+    return tts(text, **params)
+
+
+@using_with_params_decorator
+def f5_tts_adapter(text, params):
+    try:
+        from extension_f5_tts.gradio_app import infer_decorated as tts
+    except ImportError:
+        raise ImportError(
+            "F5-TTS extension is not installed. Please install it with `pip install git+https://github.com/rsxdalv/extension_f5_tts@main` or your preferred source."
+        )
+    return tts(text, **params)
+
 def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
     """Streaming adapter for chatterbox that yields audio chunks as they're generated."""
     try:
@@ -206,6 +245,10 @@ def generic_tts_adapter(text, params, model):
         return chatterbox_adapter(text, params)
     elif model == "kitten-tts":
         return kitten_tts_adapter(text, params)
+    elif model == "styletts2":
+        return styletts2_adapter(text, params)
+    elif model == "f5-tts":
+        return f5_tts_adapter(text, params)
     else:
         raise ValueError(f"Model {model} not found")
 

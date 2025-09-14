@@ -34,17 +34,17 @@ async def get_all_voices():
     """Get all available voices from all models."""
     try:
         voices = []
-        for model in ["chatterbox", "kokoro", "global_preset"]:
+        for model in ["chatterbox", "kokoro", "global_preset", "styletts2", "f5-tts"]:
             try:
                 voices.extend(get_voices_by_model(model))
             except Exception as e:
                 logger.warning(f"Could not get voices for model {model}: {e}")
                 pass
-                
+
         for voice in voices:
             voice["id"] = voice.pop("value")
             voice["name"] = voice.pop("label")
-            
+
         return {"voices": voices}
     except Exception as e:
         logger.error(f"Error getting voices: {e}")
