@@ -12,8 +12,8 @@ from tts_webui.config.config_utils import get_config_value, set_config_value
 
 
 def activate_api(host=None, port=None):
-    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
-    port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
+    host = host or get_config_value("extension_openai_tts_api", "host", "0.0.0.0")
+    port = port or get_config_value("extension_openai_tts_api", "port", 7778)
     from .router import app
 
     import uvicorn
@@ -37,8 +37,8 @@ def get_api_status():
 
 
 def test_api(host=None, port=None):
-    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
-    port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
+    host = host or get_config_value("extension_openai_tts_api", "host", "0.0.0.0")
+    port = port or get_config_value("extension_openai_tts_api", "port", 7778)
     import requests
 
     if host == "0.0.0.0":
@@ -62,8 +62,8 @@ def test_api(host=None, port=None):
 
 
 def test_api_with_open_ai(host=None, port=None):
-    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
-    port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
+    host = host or get_config_value("extension_openai_tts_api", "host", "0.0.0.0")
+    port = port or get_config_value("extension_openai_tts_api", "port", 7778)
     from openai import OpenAI
 
     if host == "0.0.0.0":
@@ -161,7 +161,7 @@ def extra_functions_ui():
 
 
 def ui():
-    gr.Markdown("# Kokoro TTS & Chatterbox API")
+    gr.Markdown("# OpenAI TTS API")
     with gr.Tabs():
         with gr.Tab("Startup"):
             startup_ui()
@@ -174,10 +174,10 @@ def ui():
 def startup_ui():
     with gr.Row():
         with gr.Column():
-            url = f"""localhost:{get_config_value("extension_kokoro_tts_api", "port", 7778)}"""
+            url = f"""localhost:{get_config_value("extension_openai_tts_api", "port", 7778)}"""
             gr.Markdown(
                 f"""
-                This extension adds an API endpoint for the Kokoro TTS & Chatterbox models. You can use this to generate audio from text.
+                This extension adds an OpenAI compatible API endpoint for TTS models. You can use this to generate audio from text.
                 
                 To use the API, you need to activate it. This will start the API server and you can then use the API endpoint.
                 
@@ -190,22 +190,22 @@ def startup_ui():
             host = gr.Textbox(
                 label="Host",
                 value=lambda: get_config_value(
-                    "extension_kokoro_tts_api", "host", "0.0.0.0"
+                    "extension_openai_tts_api", "host", "0.0.0.0"
                 ),
             )
             port = gr.Number(
                 label="Port",
                 value=lambda: get_config_value(
-                    "extension_kokoro_tts_api", "port", 7778
+                    "extension_openai_tts_api", "port", 7778
                 ),
             )
             host.change(
-                fn=lambda x: set_config_value("extension_kokoro_tts_api", "host", x),
+                fn=lambda x: set_config_value("extension_openai_tts_api", "host", x),
                 inputs=[host],
                 outputs=[],
             )
             port.change(
-                fn=lambda x: set_config_value("extension_kokoro_tts_api", "port", x),
+                fn=lambda x: set_config_value("extension_openai_tts_api", "port", x),
                 inputs=[port],
                 outputs=[],
             )
@@ -221,12 +221,12 @@ def startup_ui():
             auto_start_api = gr.Checkbox(
                 label="Auto start API",
                 value=lambda: get_config_value(
-                    "extension_kokoro_tts_api", "auto_start", False
+                    "extension_openai_tts_api", "auto_start", False
                 ),
             )
             auto_start_api.change(
                 fn=lambda x: set_config_value(
-                    "extension_kokoro_tts_api", "auto_start", x
+                    "extension_openai_tts_api", "auto_start", x
                 ),
                 inputs=[auto_start_api],
                 outputs=[],
@@ -325,7 +325,7 @@ def extension__tts_generation_webui():
 
 ENV_AUTO_ACTIVATE_OPENAI_API = os.environ.get("AUTO_ACTIVATE_OPENAI_API", "0")
 config_auto_activate_openai_api = get_config_value(
-    "extension_kokoro_tts_api", "auto_start", False
+    "extension_openai_tts_api", "auto_start", False
 )
 if ENV_AUTO_ACTIVATE_OPENAI_API == "1" or config_auto_activate_openai_api:
     activate_api()

@@ -34,7 +34,7 @@ def activate_api(host, port):
     api_server_process = Process(
         target=uvicorn.run,
         kwargs={
-            "app": "workspace.extension_kokoro_tts_api.extension_kokoro_tts_api.api:app",
+            "app": "workspace.extension_openai_tts_api.extension_openai_tts_api.api:app",
             "host": HOST,
             "port": PORT,
         },

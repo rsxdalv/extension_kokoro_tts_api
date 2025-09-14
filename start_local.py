@@ -1,5 +1,5 @@
 """
-Startup script for the local workspace version of the Kokoro TTS API.
+Startup script for the local workspace version of the OpenAI TTS API.
 This ensures we use the workspace version instead of the pip-installed package.
 """
 import sys
@@ -12,11 +12,11 @@ sys.path.insert(0, tts_webui_path)
 
 def main():
     """Start the TTS API server using the local workspace version."""
-    print("🚀 Starting Kokoro TTS API (Local Workspace Version)")
+    print("🚀 Starting OpenAI TTS API (Local Workspace Version)")
     print(f"📁 Workspace path: {workspace_path}")
     
     # Import and run the router
-    from workspace.extension_kokoro_tts_api.extension_kokoro_tts_api.router import app
+    from workspace.extension_openai_tts_api.extension_openai_tts_api.router import app
     
     # Apply torch load patch
     try:

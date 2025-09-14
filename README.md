@@ -1,13 +1,13 @@
-# Kokoro TTS API
+# OpenAI TTS API
 
-This extension provides an OpenAI compatible API for Kokoro TTS and RVC.
+This extension provides an OpenAI compatible API for multiple TTS models including Kokoro TTS and RVC.
 
 Used as extension in [TTS Webui](https://github.com/rsxdalv/tts-webui)
 
 ## Installation
 
 ```bash
-pip install git+https://github.com/rsxdalv/extension_kokoro_tts_api@main
+pip install git+https://github.com/rsxdalv/extension_openai_tts_api@main
 ```
 
 ## Requirements

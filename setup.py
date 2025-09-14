@@ -1,12 +1,12 @@
 import setuptools
 
 setuptools.setup(
-    name="extension_kokoro_tts_api",
+    name="extension_openai_tts_api",
     packages=setuptools.find_namespace_packages(),
     version="0.10.0",
     author="rsxdalv",
-    description="Kimi Audio is a powerful text-to-speech and speech-to-text model by Moonshot AI",
-    url="https://github.com/rsxdalv/extension_kokoro_tts_api",
+    description="OpenAI compatible TTS API with support for multiple TTS models",
+    url="https://github.com/rsxdalv/extension_openai_tts_api",
     project_urls={},
     scripts=[],
     install_requires=[
