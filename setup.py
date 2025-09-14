@@ -3,7 +3,7 @@ import setuptools
 setuptools.setup(
     name="extension_openai_tts_api",
     packages=setuptools.find_namespace_packages(),
-    version="0.10.0",
+    version="0.11.0",
     author="rsxdalv",
     description="OpenAI compatible TTS API with support for multiple TTS models",
     url="https://github.com/rsxdalv/extension_openai_tts_api",
