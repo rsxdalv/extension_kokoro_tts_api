@@ -1,9 +1,7 @@
 import os
 import gradio as gr
 
-from .extension_tts_generation_webui_metadata import (
-    extension_tts_generation_webui_metadata,
-)
+from .extension_metadata import get_metadata
 from tts_webui.config.config_utils import get_config_value, set_config_value
 
 # from .threader import (
@@ -14,8 +12,7 @@ from tts_webui.config.config_utils import get_config_value, set_config_value
 
 
 def activate_api(host=None, port=None):
-    host = host or get_config_value(
-        "extension_kokoro_tts_api", "host", "0.0.0.0")
+    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
     port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     from .router import app
 
@@ -40,8 +37,7 @@ def get_api_status():
 
 
 def test_api(host=None, port=None):
-    host = host or get_config_value(
-        "extension_kokoro_tts_api", "host", "0.0.0.0")
+    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
     port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     import requests
 
@@ -66,16 +62,14 @@ def test_api(host=None, port=None):
 
 
 def test_api_with_open_ai(host=None, port=None):
-    host = host or get_config_value(
-        "extension_kokoro_tts_api", "host", "0.0.0.0")
+    host = host or get_config_value("extension_kokoro_tts_api", "host", "0.0.0.0")
     port = port or get_config_value("extension_kokoro_tts_api", "port", 7778)
     from openai import OpenAI
 
     if host == "0.0.0.0":
         host = "localhost"
 
-    client = OpenAI(api_key="sk-1234567890",
-                    base_url=f"http://{host}:{port}/v1")
+    client = OpenAI(api_key="sk-1234567890", base_url=f"http://{host}:{port}/v1")
 
     with client.audio.speech.with_streaming_response.create(
         model="hexgrad/Kokoro-82M",
@@ -106,9 +100,8 @@ def test_api_with_open_ai(host=None, port=None):
 
 def presets_ui():
     import json
-    from .Presets import (
-        preset_manager,
-    )
+
+    from .router import preset_manager
 
     presets = preset_manager.get_presets()
     with gr.Row():
@@ -151,7 +144,8 @@ def extra_functions_ui():
     )
 
     def test_api_with_open_ai(params):
-        from .router import preset_adapter, CreateSpeechRequest
+        from .router import preset_adapter
+        from .models.create_speech_request import CreateSpeechRequest
 
         request = CreateSpeechRequest(**params)
         text = request.input
@@ -196,24 +190,24 @@ def startup_ui():
             host = gr.Textbox(
                 label="Host",
                 value=lambda: get_config_value(
-                    "extension_kokoro_tts_api", "host", "0.0.0.0")
+                    "extension_kokoro_tts_api", "host", "0.0.0.0"
+                ),
             )
             port = gr.Number(
                 label="Port",
                 value=lambda: get_config_value(
-                    "extension_kokoro_tts_api", "port", 7778)
+                    "extension_kokoro_tts_api", "port", 7778
+                ),
             )
             host.change(
-                fn=lambda x: set_config_value(
-                    "extension_kokoro_tts_api", "host", x),
+                fn=lambda x: set_config_value("extension_kokoro_tts_api", "host", x),
                 inputs=[host],
-                outputs=[]
+                outputs=[],
             )
             port.change(
-                fn=lambda x: set_config_value(
-                    "extension_kokoro_tts_api", "port", x),
+                fn=lambda x: set_config_value("extension_kokoro_tts_api", "port", x),
                 inputs=[port],
-                outputs=[]
+                outputs=[],
             )
 
             activate_api_btn = gr.Button("Activate API")
@@ -227,11 +221,13 @@ def startup_ui():
             auto_start_api = gr.Checkbox(
                 label="Auto start API",
                 value=lambda: get_config_value(
-                    "extension_kokoro_tts_api", "auto_start", False),
+                    "extension_kokoro_tts_api", "auto_start", False
+                ),
             )
             auto_start_api.change(
                 fn=lambda x: set_config_value(
-                    "extension_kokoro_tts_api", "auto_start", x),
+                    "extension_kokoro_tts_api", "auto_start", x
+                ),
                 inputs=[auto_start_api],
                 outputs=[],
             )
@@ -324,7 +320,7 @@ def extension__tts_generation_webui():
     """Extension entry point."""
     ui()
 
-    return extension_tts_generation_webui_metadata()
+    return get_metadata()
 
 
 ENV_AUTO_ACTIVATE_OPENAI_API = os.environ.get("AUTO_ACTIVATE_OPENAI_API", "0")

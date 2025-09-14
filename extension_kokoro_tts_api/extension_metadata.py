@@ -1,4 +1,4 @@
-def extension_tts_generation_webui_metadata():
+def get_metadata():
     return {
         "package_name": "extension_kokoro_tts_api",
         "name": "Kokoro TTS API",
