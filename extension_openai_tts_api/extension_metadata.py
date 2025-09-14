@@ -6,10 +6,10 @@ def get_metadata():
         "description": "OpenAI compatible TTS API with support for multiple TTS models",
         "extension_type": "interface",
         "extension_class": "tools",
-        "author": "rsxdalv",
+        "author": "hexgrad",
         "extension_author": "rsxdalv",
         "license": "MIT",
-        "website": "https://github.com/rsxdalv/extension_openai_tts_api",
+        "website": "https://huggingface.co/hexgrad/Kokoro-82M",
         "extension_website": "https://github.com/rsxdalv/extension_openai_tts_api",
         "extension_platform_version": "0.0.1",
     }
