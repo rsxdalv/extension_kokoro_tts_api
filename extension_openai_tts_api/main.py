@@ -104,7 +104,7 @@ def test_api_with_open_ai(host=None, port=None):
 def presets_ui():
     import json
 
-    from .router import preset_manager
+    from .utils.presets import preset_manager
 
     presets = preset_manager.get_presets()
     with gr.Row():
