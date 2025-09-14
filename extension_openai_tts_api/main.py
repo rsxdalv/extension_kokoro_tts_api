@@ -1,8 +1,11 @@
 import os
 import gradio as gr
 
-from .extension_metadata import get_metadata
 from tts_webui.config.config_utils import get_config_value, set_config_value
+
+from .migrate_config import migrate_config
+from .extension_metadata import get_metadata
+
 
 # from .threader import (
 #     activate_api,
@@ -318,17 +321,18 @@ def startup_ui():
 
 def extension__tts_generation_webui():
     """Extension entry point."""
+    migrate_config()
     ui()
 
+    ENV_AUTO_ACTIVATE_OPENAI_API = os.environ.get("AUTO_ACTIVATE_OPENAI_API", "0")
+    config_auto_activate_openai_api = get_config_value(
+        "extension_openai_tts_api", "auto_start", False
+    )
+
+    if ENV_AUTO_ACTIVATE_OPENAI_API == "1" or config_auto_activate_openai_api:
+        activate_api()
+
     return get_metadata()
-
-
-ENV_AUTO_ACTIVATE_OPENAI_API = os.environ.get("AUTO_ACTIVATE_OPENAI_API", "0")
-config_auto_activate_openai_api = get_config_value(
-    "extension_openai_tts_api", "auto_start", False
-)
-if ENV_AUTO_ACTIVATE_OPENAI_API == "1" or config_auto_activate_openai_api:
-    activate_api()
 
 
 if __name__ == "__main__":
