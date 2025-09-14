@@ -25,3 +25,5 @@ ENV/
 *.safetensors
 
 data/api/presets
+
+config.json
