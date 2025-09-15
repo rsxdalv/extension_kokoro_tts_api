@@ -5,7 +5,7 @@ HERE = Path(__file__).parent
 README = (HERE / "README.md").read_text(encoding="utf-8") if (HERE / "README.md").exists() else ""
 
 setuptools.setup(
-    name="extension_openai_tts_api",
+    name="tts_webui_extension.openai_tts_api",
     packages=setuptools.find_namespace_packages(),
     version="0.13.0",
     author="rsxdalv",
