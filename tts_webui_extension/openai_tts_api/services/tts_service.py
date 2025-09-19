@@ -142,7 +142,7 @@ def using_with_params_decorator(func):
 @using_with_params_decorator
 def kokoro_adapter(text, params):
     try:
-        from extension_kokoro.main import tts
+        from tts_webui_extension.kokoro.main import tts
     except ImportError:
         raise ImportError(
             "Kokoro extension is not installed. Please install it to use Kokoro TTS features."
@@ -153,7 +153,7 @@ def kokoro_adapter(text, params):
 @using_with_params_decorator
 def kitten_tts_adapter(text, params):
     try:
-        from extension_kitten_tts.api import tts
+        from tts_webui_extension.kitten_tts.api import tts
     except ImportError:
         raise ImportError(
             "Kitten TTS extension is not installed. Please install it to use Kitten TTS features."
@@ -164,7 +164,7 @@ def kitten_tts_adapter(text, params):
 @using_with_params_decorator
 def chatterbox_adapter(text, params):
     try:
-        from extension_chatterbox.api import tts
+        from tts_webui_extension.chatterbox.api import tts
     except ImportError:
         raise ImportError(
             "Chatterbox extension is not installed. Please install it with `pip install git+https://github.com/rsxdalv/extension_chatterbox@main`"
@@ -175,7 +175,7 @@ def chatterbox_adapter(text, params):
 @using_with_params_decorator
 def styletts2_adapter(text, params):
     try:
-        from extension_styletts2.main import tts
+        from tts_webui_extension.styletts2.main import tts
     except ImportError:
         raise ImportError(
             "StyleTTS2 extension is not installed. Please install it with `pip install git+https://github.com/rsxdalv/extension_styletts2@main` or your preferred source."
@@ -186,7 +186,7 @@ def styletts2_adapter(text, params):
 @using_with_params_decorator
 def f5_tts_adapter(text, params):
     try:
-        from extension_f5_tts.gradio_app import infer_decorated as tts
+        from tts_webui_extension.f5_tts.gradio_app import infer_decorated as tts
     except ImportError:
         raise ImportError(
             "F5-TTS extension is not installed. Please install it with `pip install git+https://github.com/rsxdalv/extension_f5_tts@main` or your preferred source."
@@ -196,7 +196,7 @@ def f5_tts_adapter(text, params):
 def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
     """Streaming adapter for chatterbox that yields audio chunks as they're generated."""
     try:
-        from extension_chatterbox.api import tts_stream
+        from tts_webui_extension.chatterbox.api import tts_stream
     except ImportError:
         raise ImportError(
             "Chatterbox extension is not installed or doesn't support streaming. "
@@ -274,7 +274,7 @@ def rvc_adapter(audio_result, rvc_params):
     import os
 
     try:
-        from extension_rvc.rvc_tab import run_rvc
+        from tts_webui_extension.rvc.rvc_tab import run_rvc
     except ImportError:
         raise ImportError(
             "RVC extension is not installed. Please install it to use RVC voice conversion features."
