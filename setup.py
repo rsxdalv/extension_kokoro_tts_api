@@ -7,7 +7,7 @@ README = (HERE / "README.md").read_text(encoding="utf-8") if (HERE / "README.md"
 setuptools.setup(
     name="tts_webui_extension.openai_tts_api",
     packages=setuptools.find_namespace_packages(),
-    version="0.13.3",
+    version="0.13.4",
     author="rsxdalv",
     description="OpenAI compatible TTS API with support for multiple TTS models",
     long_description=README,

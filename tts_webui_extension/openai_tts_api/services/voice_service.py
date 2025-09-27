@@ -27,7 +27,7 @@ def get_voices_by_model(model: str):
 def get_kokoro_voices():
     """Get available Kokoro voices"""
     try:
-        from extension_kokoro.CHOICES import CHOICES
+        from tts_webui_extension.kokoro.CHOICES import CHOICES
 
         voices = [{"value": key, "label": value} for key, value in CHOICES.items()]
         return voices
