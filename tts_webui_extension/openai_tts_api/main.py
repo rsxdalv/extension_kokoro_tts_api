@@ -147,7 +147,7 @@ def extra_functions_ui():
     )
 
     def test_api_with_open_ai(params):
-        from .router import preset_adapter
+        from .services.tts_service import preset_adapter
         from .models.create_speech_request import CreateSpeechRequest
 
         request = CreateSpeechRequest(**params)

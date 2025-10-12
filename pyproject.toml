@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tts_webui_extension.openai_tts_api"
+version = "0.13.4"
+description = "OpenAI compatible TTS API with support for multiple TTS models"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "rsxdalv" }]
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "openai",
+    "gradio",
+    "uvicorn",
+    "psutil",
+    "fastapi",
+    "pydantic",
+    "requests",
+    "scipy",
+    "numpy",
+]
+
+[project.optional-dependencies]
+kokoro = ["tts_webui_extension.kokoro"]
+rvc = ["tts_webui_extension.rvc"]
+chatterbox = ["tts_webui_extension.chatterbox"]
+kitten-tts = ["tts_webui_extension.kitten_tts"]
+styletts2 = ["tts_webui_extension.styletts2"]
+f5-tts = ["tts_webui_extension.f5_tts"]
+
+[project.urls]
+Homepage = "https://github.com/rsxdalv/tts_webui_extension.openai_tts_api"
+
+[tool.setuptools.packages.find]
+# This will find all namespace packages automatically
+namespaces = true
