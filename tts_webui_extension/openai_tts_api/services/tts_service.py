@@ -56,7 +56,8 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
     model = request.model
     params = request.params or {}
 
-    if model == "hexgrad/Kokoro-82M":
+    # Accept either the explicit short name or the full model id for Kokoro.
+    if model == "kokoro" or model == "hexgrad/Kokoro-82M":
         result = kokoro_adapter(
             text,
             {
@@ -239,7 +240,7 @@ def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
 
 
 def generic_tts_adapter(text, params, model):
-    if model == "kokoro":
+    if model == "kokoro" or model == "hexgrad/Kokoro-82M":
         return kokoro_adapter(text, params)
     elif model == "chatterbox":
         return chatterbox_adapter(text, params)

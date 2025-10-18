@@ -10,9 +10,12 @@ logger = logging.getLogger(__name__)
 
 def get_voices_by_model(model: str):
     """Get available voices for a specific model"""
+    if not model:
+        return []
+
     if model == "chatterbox":
         return get_chatterbox_voices()
-    elif model == "kokoro":
+    elif model == "kokoro" or model == "hexgrad/Kokoro-82M":
         return get_kokoro_voices()
     elif model == "global_preset":
         return get_global_preset_voices()
