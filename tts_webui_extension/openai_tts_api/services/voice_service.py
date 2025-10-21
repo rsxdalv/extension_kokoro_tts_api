@@ -92,7 +92,10 @@ def get_f5_tts_voices():
         voices = []
         if os.path.exists(f5_dir):
             voices = [
-                {"value": os.path.join(f5_dir, file), "label": file.replace(".wav", "")}
+                {
+                    "value": f"{f5_dir}/{file}",
+                    "label": file.replace(".wav", ""),
+                }
                 for file in os.listdir(f5_dir)
                 if file.endswith(".wav")
             ]
@@ -110,7 +113,7 @@ def get_styletts2_voices():
         if os.path.exists(styletts2_dir):
             voices = [
                 {
-                    "value": os.path.join(styletts2_dir, file),
+                    "value": f"{styletts2_dir}/{file}",
                     "label": file.replace(".wav", ""),
                 }
                 for file in os.listdir(styletts2_dir)
