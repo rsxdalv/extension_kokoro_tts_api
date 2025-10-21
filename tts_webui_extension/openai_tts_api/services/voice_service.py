@@ -49,7 +49,7 @@ def get_chatterbox_voices():
             voices.extend(
                 [
                     {
-                        "value": os.path.join(chatterbox_dir, file),
+                        "value": f"voices/chatterbox/{file}",
                         "label": file.replace(".wav", ""),
                     }
                     for file in os.listdir(chatterbox_dir)
