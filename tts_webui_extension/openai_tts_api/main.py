@@ -43,12 +43,19 @@ def test_api(host=None, port=None):
     host = host or get_config_value("extension_openai_tts_api", "host", "0.0.0.0")
     port = port or get_config_value("extension_openai_tts_api", "port", 7778)
     import requests
+    # Include Authorization header if API key is configured (env has priority)
+    api_key = os.environ.get("OPENAI_API_KEY") or get_config_value(
+        "extension_openai_tts_api", "api_key", None
+    )
 
     if host == "0.0.0.0":
         host = "localhost"
 
+    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+
     response = requests.post(
         f"http://{host}:{port}/v1/audio/speech",
+        headers=headers,
         json={
             "model": "hexgrad/Kokoro-82M",
             "input": "Hello world with custom parameters.",
@@ -72,7 +79,11 @@ def test_api_with_open_ai(host=None, port=None):
     if host == "0.0.0.0":
         host = "localhost"
 
-    client = OpenAI(api_key="sk-1234567890", base_url=f"http://{host}:{port}/v1")
+    import os
+    api_key = os.environ.get("OPENAI_API_KEY") or get_config_value(
+        "extension_openai_tts_api", "api_key", "sk-1234567890"
+    )
+    client = OpenAI(api_key=api_key, base_url=f"http://{host}:{port}/v1")
 
     with client.audio.speech.with_streaming_response.create(
         model="hexgrad/Kokoro-82M",
@@ -187,6 +198,8 @@ def startup_ui():
                 The default API endpoint is http://{url}/v1/audio/speech
                 
                 The default OpenAI API Base_url is http://{url}/v1/
+                
+                Authentication: You can protect the API with an API key. Set the OPENAI_API_KEY environment variable or save a key below. If no key is set, the API is open.
                 """
             )
 
@@ -210,6 +223,18 @@ def startup_ui():
             port.change(
                 fn=lambda x: set_config_value("extension_openai_tts_api", "port", x),
                 inputs=[port],
+                outputs=[],
+            )
+
+            api_key = gr.Textbox(
+                label="API Key (OpenAI-compatible)",
+                type="password",
+                value=lambda: get_config_value("extension_openai_tts_api", "api_key", ""),
+                placeholder="Leave blank for no auth. Env var OPENAI_API_KEY overrides.",
+            )
+            api_key.change(
+                fn=lambda x: set_config_value("extension_openai_tts_api", "api_key", x or None),
+                inputs=[api_key],
                 outputs=[],
             )
 
@@ -267,6 +292,7 @@ def startup_ui():
 
             response = requests.post(
                 "http://{url}/v1/audio/speech",
+                headers={{"Authorization": f"Bearer YOUR_API_KEY"}},  # remove if no key
                 json={{
                     "model": "hexgrad/Kokoro-82M",
                     "input": "Hello world with custom parameters.",
@@ -299,7 +325,7 @@ def startup_ui():
             ```python
             from openai import OpenAI
 
-            client = OpenAI(api_key="sk-1234567890", base_url="http://{url}/v1")
+            client = OpenAI(api_key="YOUR_API_KEY", base_url="http://{url}/v1")
 
             with client.audio.speech.with_streaming_response.create(
                 model="hexgrad/Kokoro-82M",

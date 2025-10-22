@@ -25,6 +25,16 @@ pip install git+https://github.com/rsxdalv/extension_chatterbox@main
 
 ## Usage
 
+### Authentication
+
+You can optionally protect the API with an API key.
+
+- Environment variable (priority): set `OPENAI_API_KEY` before starting the server/extension.
+- UI setting: in the extension's Gradio UI, set "API Key (OpenAI-compatible)". This is saved to your config and used when the env var is not set.
+- If neither is set, the API is open and does not require authentication.
+
+Clients should send the header `Authorization: Bearer <YOUR_API_KEY>`.
+
 ### Kokoro TTS
 
 ```python
