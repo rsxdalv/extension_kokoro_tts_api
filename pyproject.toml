@@ -28,12 +28,20 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-kokoro = ["tts_webui_extension.kokoro"]
-rvc = ["tts_webui_extension.rvc"]
 chatterbox = ["tts_webui_extension.chatterbox"]
-kitten-tts = ["tts_webui_extension.kitten_tts"]
-styletts2 = ["tts_webui_extension.styletts2"]
 f5-tts = ["tts_webui_extension.f5_tts"]
+fireredtts2 = ["tts_webui_extension.fireredtts2"]
+higgs_v2 = ["tts_webui_extension.higgs_v2"]
+kitten-tts = ["tts_webui_extension.kitten_tts"]
+kokoro = ["tts_webui_extension.kokoro"]
+megatts3 = ["tts_webui_extension.megatts3"]
+mms = ["tts_webui_extension.mms"]
+parler-tts = ["tts_webui_extension.parler_tts"]
+piper-tts = ["tts_webui_extension.piper_tts"]
+rvc = ["tts_webui_extension.rvc"]
+styletts2 = ["tts_webui_extension.styletts2"]
+vall-e-x = ["tts_webui_extension.vall_e_x"]
+
 
 [project.urls]
 Homepage = "https://github.com/rsxdalv/tts_webui_extension.openai_tts_api"
