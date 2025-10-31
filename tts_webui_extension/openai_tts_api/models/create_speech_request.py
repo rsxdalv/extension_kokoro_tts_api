@@ -11,6 +11,8 @@ class ModelEnum(str, Enum):
     GLOBAL_PRESET = "global_preset"
     STYLETTS2 = "styletts2"
     F5_TTS = "f5-tts"
+    PIPER_TTS = "piper-tts"
+    VALL_E_X = "vall-e-x"
 
 
 class CreateSpeechRequest(BaseModel):

@@ -105,6 +105,29 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 **params,
             },
         )
+    elif model == "piper-tts":
+        result = piper_tts_adapter(
+            text,
+            {
+                "voice_name": request.voice,
+                "length_scale": 1.0 / request.speed if request.speed else 1.0,
+                "noise_scale": params.get("noise_scale", 0.667),
+                "noise_w": params.get("noise_w", 0.8),
+                "sentence_silence": params.get("sentence_silence", 0.2),
+                **params,
+            },
+        )
+    elif model == "vall-e-x":
+        result = vall_e_x_adapter(
+            text,
+            {
+                "prompt": params.get("prompt", ""),
+                "language": params.get("language", "English"),
+                "accent": params.get("accent", "no-accent"),
+                "mode": params.get("mode", "short"),
+                **params,
+            },
+        )
     elif model == "global_preset":
         result = preset_adapter(request, text)
     else:
@@ -194,6 +217,29 @@ def f5_tts_adapter(text, params):
         )
     return tts(text, **params)
 
+
+@using_with_params_decorator
+def piper_tts_adapter(text, params):
+    try:
+        from tts_webui_extension.piper_tts.api import tts
+    except ImportError:
+        raise ImportError(
+            "Piper TTS extension is not installed. Please install it to use Piper TTS features."
+        )
+    return tts(text=text, **params)
+
+
+@using_with_params_decorator
+def vall_e_x_adapter(text, params):
+    try:
+        from tts_webui_extension.vall_e_x.api import tts
+    except ImportError:
+        raise ImportError(
+            "Vall-E-X extension is not installed. Please install it to use Vall-E-X features."
+        )
+    return tts(text=text, **params)
+
+
 def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
     """Streaming adapter for chatterbox that yields audio chunks as they're generated."""
     try:
@@ -250,6 +296,10 @@ def generic_tts_adapter(text, params, model):
         return styletts2_adapter(text, params)
     elif model == "f5-tts":
         return f5_tts_adapter(text, params)
+    elif model == "piper-tts":
+        return piper_tts_adapter(text, params)
+    elif model == "vall-e-x":
+        return vall_e_x_adapter(text, params)
     else:
         raise ValueError(f"Model {model} not found")
 
