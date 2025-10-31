@@ -128,6 +128,17 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 **params,
             },
         )
+    elif model == "parler-tts":
+        result = parler_tts_adapter(
+            text,
+            {
+                "description": params.get("description", "A neutral voice."),
+                "model_name": params.get("model_name", "parler-tts/parler-tts-mini-v1"),
+                "attn_implementation": params.get("attn_implementation", "eager"),
+                "compile_mode": params.get("compile_mode", None),
+                **params,
+            },
+        )
     elif model == "global_preset":
         result = preset_adapter(request, text)
     else:
@@ -240,6 +251,17 @@ def vall_e_x_adapter(text, params):
     return tts(text=text, **params)
 
 
+@using_with_params_decorator
+def parler_tts_adapter(text, params):
+    try:
+        from tts_webui_extension.parler_tts.api import tts
+    except ImportError:
+        raise ImportError(
+            "Parler TTS extension is not installed. Please install it to use Parler TTS features."
+        )
+    return tts(text=text, **params)
+
+
 def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
     """Streaming adapter for chatterbox that yields audio chunks as they're generated."""
     try:
@@ -300,6 +322,8 @@ def generic_tts_adapter(text, params, model):
         return piper_tts_adapter(text, params)
     elif model == "vall-e-x":
         return vall_e_x_adapter(text, params)
+    elif model == "parler-tts":
+        return parler_tts_adapter(text, params)
     else:
         raise ValueError(f"Model {model} not found")
 

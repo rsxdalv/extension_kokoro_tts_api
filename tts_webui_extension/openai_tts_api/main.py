@@ -362,6 +362,9 @@ def extension__tts_generation_webui():
 
 
 if __name__ == "__main__":
+    from tts_webui.utils.torch_load_patch import apply_torch_load_patch
+    apply_torch_load_patch()
+
     if "demo" in locals():
         locals()["demo"].close()  # type: ignore
     with gr.Blocks() as demo:
