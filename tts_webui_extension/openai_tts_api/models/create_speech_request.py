@@ -14,6 +14,10 @@ class ModelEnum(str, Enum):
     PIPER_TTS = "piper-tts"
     VALL_E_X = "vall-e-x"
     PARLER_TTS = "parler-tts"
+    MEGATTS3 = "megatts3"
+    FIREREDTTS2 = "fireredtts2"
+    HIGGS_V2 = "higgs_v2"
+    MMS = "mms"
 
 
 class CreateSpeechRequest(BaseModel):

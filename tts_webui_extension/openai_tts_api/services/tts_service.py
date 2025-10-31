@@ -139,6 +139,53 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 **params,
             },
         )
+    elif model == "megatts3":
+        result = megatts3_adapter(
+            text,
+            {
+                "reference_audio_path": params.get("reference_audio_path", ""),
+                "latent_npy_path": params.get("latent_npy_path", ""),
+                "inference_steps": params.get("inference_steps", 32),
+                "intelligibility_weight": params.get("intelligibility_weight", 0.8),
+                "similarity_weight": params.get("similarity_weight", 0.8),
+                **params,
+            },
+        )
+    elif model == "fireredtts2":
+        result = fireredtts2_adapter(
+            text,
+            {
+                "temperature": params.get("temperature", 0.9),
+                "topk": params.get("topk", 30),
+                "prompt_wav": params.get("prompt_wav"),
+                "prompt_text": params.get("prompt_text"),
+                "model_name": params.get("model_name", "monologue"),
+                "device": params.get("device", "cuda"),
+                **params,
+            },
+        )
+    elif model == "higgs_v2":
+        result = higgs_v2_adapter(
+            text,
+            {
+                "temperature": params.get("temperature", 0.8),
+                "audio_prompt_path": params.get("audio_prompt_path"),
+                "seed": params.get("seed", -1),
+                "scene_description": params.get("scene_description"),
+                **params,
+            },
+        )
+    elif model == "mms":
+        result = mms_adapter(
+            text,
+            {
+                "language": params.get("language", "eng"),
+                "speaking_rate": request.speed,
+                "noise_scale": params.get("noise_scale", 0.667),
+                "noise_scale_duration": params.get("noise_scale_duration", 0.8),
+                **params,
+            },
+        )
     elif model == "global_preset":
         result = preset_adapter(request, text)
     else:
@@ -262,6 +309,71 @@ def parler_tts_adapter(text, params):
     return tts(text=text, **params)
 
 
+@using_with_params_decorator
+def megatts3_adapter(text, params):
+    try:
+        from tts_webui_extension.megatts3.tts import tts
+    except ImportError:
+        raise ImportError(
+            "MegaTTS3 extension is not installed. Please install it to use MegaTTS3 features."
+        )
+    return tts(
+        reference_audio_path=params.get("reference_audio_path", ""),
+        latent_npy_path=params.get("latent_npy_path", ""),
+        target_text=text,
+        inference_steps=params.get("inference_steps", 32),
+        intelligibility_weight=params.get("intelligibility_weight", 0.8),
+        similarity_weight=params.get("similarity_weight", 0.8),
+    )
+
+
+@using_with_params_decorator
+def fireredtts2_adapter(text, params):
+    try:
+        from tts_webui_extension.fireredtts2.api import tts
+    except ImportError:
+        raise ImportError(
+            "FireRedTTS2 extension is not installed. Please install it to use FireRedTTS2 features."
+        )
+    return tts(
+        text=text,
+        temperature=params.get("temperature", 0.9),
+        topk=params.get("topk", 30),
+        prompt_wav=params.get("prompt_wav"),
+        prompt_text=params.get("prompt_text"),
+        model_name=params.get("model_name", "monologue"),
+        device=params.get("device", "cuda"),
+    )
+
+
+@using_with_params_decorator
+def higgs_v2_adapter(text, params):
+    try:
+        from tts_webui_extension.higgs_v2.api import tts
+    except ImportError:
+        raise ImportError(
+            "Higgs V2 extension is not installed. Please install it to use Higgs V2 features."
+        )
+    return tts(
+        text=text,
+        temperature=params.get("temperature", 0.8),
+        audio_prompt_path=params.get("audio_prompt_path"),
+        seed=params.get("seed", -1),
+        scene_description=params.get("scene_description"),
+    )
+
+
+@using_with_params_decorator
+def mms_adapter(text, params):
+    try:
+        from tts_webui_extension.mms.api import tts
+    except ImportError:
+        raise ImportError(
+            "MMS extension is not installed. Please install it to use MMS TTS features."
+        )
+    return tts(text=text, **params)
+
+
 def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
     """Streaming adapter for chatterbox that yields audio chunks as they're generated."""
     try:
@@ -324,6 +436,14 @@ def generic_tts_adapter(text, params, model):
         return vall_e_x_adapter(text, params)
     elif model == "parler-tts":
         return parler_tts_adapter(text, params)
+    elif model == "megatts3":
+        return megatts3_adapter(text, params)
+    elif model == "fireredtts2":
+        return fireredtts2_adapter(text, params)
+    elif model == "higgs_v2":
+        return higgs_v2_adapter(text, params)
+    elif model == "mms":
+        return mms_adapter(text, params)
     else:
         raise ValueError(f"Model {model} not found")
 
