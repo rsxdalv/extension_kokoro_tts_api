@@ -18,6 +18,7 @@ class ModelEnum(str, Enum):
     FIREREDTTS2 = "fireredtts2"
     HIGGS_V2 = "higgs_v2"
     MMS = "mms"
+    MAHA_TTS = "maha_tts"
 
 
 class CreateSpeechRequest(BaseModel):

@@ -186,6 +186,17 @@ def generate_speech(request: CreateSpeechRequest) -> bytes:
                 **params,
             },
         )
+    elif model == "maha_tts":
+        result = maha_tts_adapter(
+            text,
+            {
+                "model_name": params.get("model_name", "Smolie-in"),
+                "text_language": params.get("text_language", "english"),
+                "speaker_name": request.voice,
+                "device": params.get("device", "auto"),
+                **params,
+            },
+        )
     elif model == "global_preset":
         result = preset_adapter(request, text)
     else:
@@ -374,6 +385,17 @@ def mms_adapter(text, params):
     return tts(text=text, **params)
 
 
+@using_with_params_decorator
+def maha_tts_adapter(text, params):
+    try:
+        from tts_webui_extension.maha_tts.api import tts
+    except ImportError:
+        raise ImportError(
+            "Maha TTS extension is not installed. Please install it to use Maha TTS features."
+        )
+    return tts(text=text, **params)
+
+
 def chatterbox_streaming_adapter(text, params) -> Iterator[bytes]:
     """Streaming adapter for chatterbox that yields audio chunks as they're generated."""
     try:
@@ -444,6 +466,8 @@ def generic_tts_adapter(text, params, model):
         return higgs_v2_adapter(text, params)
     elif model == "mms":
         return mms_adapter(text, params)
+    elif model == "maha_tts":
+        return maha_tts_adapter(text, params)
     else:
         raise ValueError(f"Model {model} not found")
 

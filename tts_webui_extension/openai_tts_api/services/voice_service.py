@@ -23,6 +23,22 @@ def get_voices_by_model(model: str):
         return get_styletts2_voices()
     elif model == "f5-tts":
         return get_f5_tts_voices()
+    elif model == "piper-tts":
+        return get_piper_tts_voices()
+    elif model == "vall-e-x":
+        return get_vall_e_x_voices()
+    elif model == "parler-tts":
+        return get_parler_tts_voices()
+    elif model == "megatts3":
+        return get_megatts3_voices()
+    elif model == "fireredtts2":
+        return get_fireredtts2_voices()
+    elif model == "higgs_v2":
+        return get_higgs_v2_voices()
+    elif model == "mms":
+        return get_mms_voices()
+    elif model == "maha_tts":
+        return get_maha_tts_voices()
     else:
         return []
 
@@ -82,6 +98,14 @@ def get_available_models():
         {"id": "global_preset"},
         {"id": "styletts2"},
         {"id": "f5-tts"},
+        {"id": "piper-tts"},
+        {"id": "vall-e-x"},
+        {"id": "parler-tts"},
+        {"id": "megatts3"},
+        {"id": "fireredtts2"},
+        {"id": "higgs_v2"},
+        {"id": "mms"},
+        {"id": "maha_tts"},
     ]
 
 
@@ -122,4 +146,50 @@ def get_styletts2_voices():
         return voices
     except Exception as e:
         logger.warning(f"Could not get StyleTTS2 voices: {e}")
+        return []
+
+
+def get_piper_tts_voices():
+    """Get available Piper TTS voices"""
+    # Piper TTS uses voice names, not files
+    return []
+
+
+def get_vall_e_x_voices():
+    """Get available Vall-E-X voices"""
+    return []
+
+
+def get_parler_tts_voices():
+    """Get available Parler TTS voices"""
+    return []
+
+
+def get_megatts3_voices():
+    """Get available MegaTTS3 voices"""
+    return []
+
+
+def get_fireredtts2_voices():
+    """Get available FireRedTTS2 voices"""
+    return []
+
+
+def get_higgs_v2_voices():
+    """Get available Higgs V2 voices"""
+    return []
+
+
+def get_mms_voices():
+    """Get available MMS voices (languages)"""
+    return []
+
+
+def get_maha_tts_voices():
+    """Get available Maha TTS voices (speakers)"""
+    try:
+        from tts_webui_extension.maha_tts.api import get_voices
+        return get_voices()
+    except ImportError:
+        logger.warning("Maha TTS extension not available")
         return []
