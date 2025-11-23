@@ -48,7 +48,7 @@ def get_kokoro_voices():
     try:
         from tts_webui_extension.kokoro.CHOICES import CHOICES
 
-        voices = [{"value": key, "label": value} for key, value in CHOICES.items()]
+        voices = [{"label": key, "value": value} for key, value in CHOICES.items()]
         return voices
     except ImportError:
         logger.warning("Kokoro extension not available")
@@ -57,16 +57,17 @@ def get_kokoro_voices():
 
 def get_chatterbox_voices():
     """Get available Chatterbox voices"""
+    default = [{"label": "Random", "value": "random"}]
     try:
-        voices = [{"value": "random", "label": "Random"}]
+        voices = default
 
         chatterbox_dir = "voices/chatterbox"
         if os.path.exists(chatterbox_dir):
             voices.extend(
                 [
                     {
-                        "value": f"voices/chatterbox/{file}",
                         "label": file.replace(".wav", ""),
+                        "value": f"voices/chatterbox/{file}",
                     }
                     for file in os.listdir(chatterbox_dir)
                     if file.endswith(".wav")
@@ -76,7 +77,7 @@ def get_chatterbox_voices():
         return voices
     except Exception as e:
         logger.warning(f"Could not get chatterbox voices: {e}")
-        return [{"value": "random", "label": "Random"}]
+        return default
 
 
 def get_global_preset_voices():
@@ -117,8 +118,8 @@ def get_f5_tts_voices():
         if os.path.exists(f5_dir):
             voices = [
                 {
-                    "value": f"{f5_dir}/{file}",
                     "label": file.replace(".wav", ""),
+                    "value": f"{f5_dir}/{file}",
                 }
                 for file in os.listdir(f5_dir)
                 if file.endswith(".wav")
@@ -137,8 +138,8 @@ def get_styletts2_voices():
         if os.path.exists(styletts2_dir):
             voices = [
                 {
-                    "value": f"{styletts2_dir}/{file}",
                     "label": file.replace(".wav", ""),
+                    "value": f"{styletts2_dir}/{file}",
                 }
                 for file in os.listdir(styletts2_dir)
                 if file.endswith(".wav")
